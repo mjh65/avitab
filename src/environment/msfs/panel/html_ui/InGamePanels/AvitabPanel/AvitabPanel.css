@@ -18,9 +18,6 @@
     width: 100%;
     height: 0%;
 }
-#Avitab ingame-ui#AvitabPanel #ScratchArea #FrameBuffer {
-    display: none;
-}
-#Avitab ingame-ui#AvitabPanel #ScratchArea #Response {
+#Avitab ingame-ui#AvitabPanel #ScratchArea #ImageBuffer {
     display: none;
 }

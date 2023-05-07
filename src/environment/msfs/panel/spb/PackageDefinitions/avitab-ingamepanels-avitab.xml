@@ -1,9 +1,9 @@
-<AssetPackage Name="avitab-ingamepanels-avitab" Version="1.0.0">
+<AssetPackage Name="avitab-ingamepanels-avitab" Version="0.1.2">
 	<ItemSettings>
 		<ContentType>SPB</ContentType>
 		<Title>avitab-ingamepanels-avitab</Title>
 		<Manufacturer></Manufacturer>
-		<Creator>Folke</Creator>
+		<Creator>Avitab</Creator>
 	</ItemSettings>
 	<Flags>
 		<VisibleInStore>false</VisibleInStore>

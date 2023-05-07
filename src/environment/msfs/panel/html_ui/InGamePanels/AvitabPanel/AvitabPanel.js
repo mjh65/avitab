@@ -4,23 +4,141 @@ document.addEventListener('beforeunload', function () {
     AvitabIsLoaded = false;
 }, false);
 
+class AvitabHttp {
+    constructor(i) {
+        this.imageBuffer = i;
+        this.reqId = 1;
+        this.lastResponseTime = 0;
+        this.lastUpdateTime = 0;
+        this.lastPositionTime = 0;
+        this.imageLoading = false;
+        this.imageReady = false;
+        this.imageBuffer.addEventListener("load", () => {
+            this.imageReady = true;
+            this.imageLoading = false;
+            this.lastResponseTime = Date.now();
+        });
+        this.imageBuffer.addEventListener("error", () => {
+            this.imageLoading = false;
+            this.lastResponseTime = Date.now();
+        });
+        this.lastTrafficTime = Date.now() + 5000;
+        this.trafficLoading = false;
+        this.trafficReady = false;
+        let listener = RegisterViewListener('JS_LISTENER_MAPS', () => {
+            listener.trigger('JS_BIND_BINGMAP', 'avitab' + Date.now(), false);
+        });
+    }
+    onResponse(resp) {
+        //console.log("onResponse " + resp.responseText);
+        this.lastResponseTime = Date.now();
+        // TODO - extract server status info from resp.responseText
+    }
+    mouseEvent(x,y,b) {
+        var self = this;
+        let xhttp = new XMLHttpRequest();
+        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + "&mx=" + x + "&my=" + y + "&mb=" + b;
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                self.onResponse(this);
+            }
+        };
+        xhttp.open("GET", url);
+        xhttp.send();
+    }
+    wheelEvent(d) {
+        var self = this;
+        let xhttp = new XMLHttpRequest();
+        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + ((d<0) ? "&wu" : "&wd");
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                self.onResponse(this);
+            }
+        };
+        xhttp.open("GET", url);
+        xhttp.send();
+    }
+    positionUpdate() {
+        const lat = SimVar.GetSimVarValue("PLANE LATITUDE", "degree latitude");
+        const lon = SimVar.GetSimVarValue("PLANE LONGITUDE", "degree longitude");
+        const alt = SimVar.GetSimVarValue("PLANE ALTITUDE", "meters");
+        const hdg = SimVar.GetSimVarValue("PLANE HEADING DEGREES TRUE", "radians");
+        var self = this;
+        let xhttp = new XMLHttpRequest();
+        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + "&lt=" + lat.toFixed(4) + "&ln=" + lon.toFixed(4) + "&al=" + alt.toFixed(1) + "&hg=" + hdg.toFixed(0);
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                self.onResponse(this);
+            }
+        };
+        xhttp.open("GET", url);
+        xhttp.send();
+    }
+    trafficUpdate(ta) {
+        var self = this;
+        let xhttp = new XMLHttpRequest();
+        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + "&tr=";
+        for (let i = 0; i < ta.length; i++) {
+            const entry = ta[i];
+            url = url + entry.lat.toFixed(4) + ',' + entry.lon.toFixed(4) + ',' + entry.alt.toFixed(1) + ',' + entry.heading.toFixed(0) + '_';
+        }
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                self.onResponse(this);
+            }
+        };
+        xhttp.open("GET", url);
+        xhttp.send();
+    }
+    trafficRequest() {
+        this.trafficLoading = true;
+        Coherent.call("GET_AIR_TRAFFIC").then((obj) => {
+            //console.log("TRAFFIC : " + obj.length + " airplanes found");
+            this.trafficUpdate(obj);
+            this.trafficLoading = false;
+        });
+    }
+    update() {
+        // called on each animation frame callback
+        const now = Date.now();
+
+        // get our position every 0.5 seconds
+        if (((now - this.lastPositionTime) > 500)) {
+            this.lastPositionTime = now;
+            this.positionUpdate();
+        }
+
+        // get other traffic every 1 second
+        if ((this.trafficLoading == false) && ((now - this.lastTrafficTime) > 1000)) {
+            this.lastTrafficTime = now;
+            this.trafficRequest();
+        }
+
+        // may want to throttle this back, currently loads images as fast as responses allow
+        if ((this.imageReady == false) && (this.imageLoading == false)) {
+            this.imageLoading = true;
+            let url = "http://127.0.0.1:26730/f?t=" + (this.reqId++);
+            this.imageBuffer.src = url;
+        }
+
+        // let the caller know if a new image is ready for drawing, or if connection is lost
+        let ready = this.imageReady;
+        this.imageReady = false;
+        return [ready, ((now - this.lastResponseTime) > 3000)];
+    }
+}
+
 class AvitabElement extends TemplateElement {
     constructor() {
         super(...arguments);
         this.panelActive = false;
         this.ingameUi = null;
-        this.display = null;
+        this.borderElement = null;
         this.canvas = null;
         this.canvasX = 800;
         this.canvasY = 480;
-        this.frameBuffer = null;
-        this.response = null;
-        this.isResponsePending = false;
-        this.loopTime = 0;
-        this.responseTimer = 0;
-        this.stateCounter = 0;
+        this.imageBuffer = null;
         this.mouseDown = false;
-        this.wheelPending = 0;
     }
     connectedCallback() {
         //console.log('connectedCallback()');
@@ -28,16 +146,15 @@ class AvitabElement extends TemplateElement {
 
         var self = this;
         this.ingameUi = this.querySelector('ingame-ui');
-        this.display = document.getElementById("AvitabDisplay");
+        this.borderElement = document.getElementById("AvitabDisplay");
         this.canvas = document.getElementById("AvitabCanvas");
-        this.frameBuffer = document.getElementById("FrameBuffer");
-        this.response = document.getElementById("Response");
+        this.imageBuffer = document.getElementById("ImageBuffer");
+        this.http = new AvitabHttp(this.imageBuffer);
 
         if (this.ingameUi) {
             this.ingameUi.addEventListener("panelActive", (e) => {
                 //console.log('panelActive');
                 self.panelActive = true;
-                this.loopTime = Date.now();
                 let updateLoop = () => {
                     if (window["IsDestroying"] === true) {
                         return;
@@ -60,86 +177,43 @@ class AvitabElement extends TemplateElement {
 
         if (this.canvas) {
             this.canvas.addEventListener("mousemove", (e) => {
-                if (self.mouseDown) {
-                    this.mouseEventReq(self, e.offsetX, e.offsetY, 1);
+                if (this.mouseDown) {
+                    this.http.mouseEvent(Math.round(800 * e.offsetX / this.canvasX), Math.round(480 * e.offsetY / this.canvasY), 1);
                 }
             });
             this.canvas.addEventListener("mousedown", (e) => {
-                self.mouseDown = true;
-                this.mouseEventReq(self, e.offsetX, e.offsetY, 1);
+                this.mouseDown = true;
+                this.http.mouseEvent(Math.round(800 * e.offsetX / this.canvasX), Math.round(480 * e.offsetY / this.canvasY), 1);
             });
             this.canvas.addEventListener("mouseup", (e) => {
-                self.mouseDown = false;
-                this.mouseEventReq(self, e.offsetX, e.offsetY, 0);
+                this.mouseDown = false;
+                this.http.mouseEvent(Math.round(800 * e.offsetX / this.canvasX), Math.round(480 * e.offsetY / this.canvasY), 0);
             });
             this.canvas.addEventListener("wheel", (e) => {
-                this.wheelEventReq(self, e.deltaY);
+                this.http.wheelEvent(e.deltaY);
             });
-        }
-
-        if (this.frameBuffer) {
-            this.frameBuffer.addEventListener("load", this.frameReady(self));
-            this.frameBuffer.addEventListener("error", this.noConnection(self));
-            this.frameBuffer.style.display = "none";
-        }
-
-        if (this.response) {
-            this.response.style.display = "none";
         }
     }
     disconnectedCallback() {
-        //console.log('disconnectedCallback()');
         super.disconnectedCallback();
     }
-
     onPanelResized() {
-        //console.log("Resize: " + this.display.offsetHeight + " x " + this.display.offsetHeight);
-        this.canvasX = this.display.offsetWidth;
-        this.canvasY = this.display.offsetHeight;
+        let scale = this.borderElement.offsetWidth / 800;
+        if ((this.borderElement.offsetHeight / 480) < scale) {
+            scale = this.borderElement.offsetHeight / 480;
+        }
+        this.canvasX = Math.round(800 * scale);
+        this.canvasY = Math.round(480 * scale);
         this.canvas.width = this.canvasX;
         this.canvas.height = this.canvasY;
     }
-
-    mouseEventReq(me,x,y,b) {
-        let xhttp = new XMLHttpRequest();
-        let url = "http://127.0.0.1:26730/m?t=" + me.loopTime;
-        url = url + "&mx=" + Math.round(x * 800 / me.canvasX) + "&my=" + Math.round(y * 480 / me.canvasY) + "&mb=" + b;
-        xhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                me.mouseEventResp(me)
-            }
-        };
-        xhttp.open("GET", url);
-        xhttp.send();
-    }
-    mouseEventResp(me) {
-        //console.log("mouseEventResp");
-    }
-
-    wheelEventReq(me,d) {
-        let xhttp = new XMLHttpRequest();
-        let url = "http://127.0.0.1:26730/m?t=" + me.loopTime + ((d<0) ? "&wu" : "&wd");
-        xhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                me.wheelEventResp(me)
-            }
-        };
-        xhttp.open("GET", url);
-        xhttp.send();
-    }
-    wheelEventResp(me) {
-        //console.log("wheelEventResp");
-    }
-
-    frameReady(me) {
-        //console.log('frameReady');
-        let ctx = me.canvas.getContext("2d");
-        ctx.drawImage(me.frameBuffer, 0, 0, 800, 480, 0, 0, me.canvasX, me.canvasY);
-        me.isResponsePending = false;
+    updateCanvas() {
+        let ctx = this.canvas.getContext("2d");
+        ctx.drawImage(this.imageBuffer, 0, 0, 800, 480, 0, 0, this.canvasX, this.canvasY);
     }
     noConnection(me) {
-        //console.log('noConnection');
-        let ctx = me.canvas.getContext("2d");
+        // TODO - scale this to fit canvas
+        let ctx = this.canvas.getContext("2d");
         ctx.fillStyle = "red";
         ctx.strokeStyle = "red";
         ctx.lineWidth = 20;
@@ -151,48 +225,14 @@ class AvitabElement extends TemplateElement {
         ctx.font = "36px Arial";
         ctx.fillStyle = "black";
         ctx.fillText("!no response from Avitab-msfs-igps.exe!", 70, 350);
-        me.isResponsePending = false;
     }
 
     flightLoop() {
-        const now = Date.now();
-        const dt = now - this.loopTime;
-        this.loopTime = now;
-
-        if (this.isResponsePending) {
-            this.responseTimer += dt;
-            if (this.responseTimer > 2000) {
-                // if no response after 2s assume failure and try again
-                this.noConnection(this);
-            } else if (this.frameBuffer.complete) {
-                // in case the image load callback didn't fire
-                this.frameReady(this);
-            }
-            return;
-        }
-
-        //console.log("flightLoop(delta:" + dt + ")"); // deltas are usually 30 (ms) or so
-
-        const frameUpdateRate = 50;
-        this.stateCounter += 1;
-        if (this.stateCounter > frameUpdateRate) {
-            // get a new frame from the server, every 600ms or so if nothing else is happening,
-            // and reset the counter to start a new cycle
-            this.stateCounter = 0;
-            let url = "http://127.0.0.1:26730/f?t=" + this.loopTime;
-            this.isResponsePending = true;
-            this.responseTimer = 0;
-            this.frameBuffer.src = url;
-        } else if (this.stateCounter = frameUpdateRate) {
-            // update the aircraft position just before we ask for a new frame
-            const lat = SimVar.GetSimVarValue("PLANE LATITUDE", "degree latitude");
-            const lon = SimVar.GetSimVarValue("PLANE LONGITUDE", "degree longitude");
-            const alt = SimVar.GetSimVarValue("PLANE ALTITUDE", "feet");
-            const hdg = SimVar.GetSimVarValue("PLANE HEADING DEGREES TRUE", "radians");
-            let url = "http://127.0.0.1:26730/m?t=" + this.loopTime + "&lt=" + lat + "&ln=" + lon + "&al=" + alt + "&hg=" + hdg;
-            this.isResponsePending = true;
-            this.responseTimer = 0;
-            this.response.src = url;
+        let res = this.http.update();
+        if (res[1]) {
+            this.noConnection();
+        } else if (res[0]) {
+            this.updateCanvas();
         }
     }
 }

@@ -146,7 +146,7 @@ void PanelServer::connectionLoop()
     LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Panel has connected ...");
 
     bool keepConnection = true;
-    while (keepConnection) {
+    while (serverKeepAlive && keepConnection) {
         auto req = std::make_unique<HttpReq>();
         while (serverKeepAlive) {
             fd_set readSet;
@@ -199,6 +199,7 @@ bool PanelServer::processRequest(HttpReq *req)
         // if provided, get aircraft position and send this into the avitab engine
         std::string longitude, latitude, altitude, heading;
         if (req->getQueryString("lt",latitude) && req->getQueryString("ln",longitude) && req->getQueryString("al",altitude) && req->getQueryString("hg",heading)) {
+            LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Got position: %s,%s,%s,%s", latitude.c_str(), longitude.c_str(), altitude.c_str(), heading.c_str());
             owner->updateAircraftLocation(std::stof(longitude), std::stof(latitude), std::stof(altitude), 57.2958f * std::stof(heading));
         }
 
@@ -209,12 +210,20 @@ bool PanelServer::processRequest(HttpReq *req)
             owner->updateMouseState(std::stoi(mx), std::stoi(my), std::stoi(button));
         }
 
+        // if provided, get wheel information and send it to the driver
         std::string wheel;
         auto wheelUp = req->getQueryString("wu",wheel);
         auto wheelDown = req->getQueryString("wd",wheel);
         if (wheelUp || wheelDown) {
             LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Got wheel event: %s", wheelUp ? "up" : "down");
             owner->updateWheelState(wheelUp);
+        }
+
+        // if provided, get other aircraft information and pass it to the environment
+        std::string traffic;
+        if (req->getQueryString("tr",traffic)) {
+            LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Got traffic information: %s", traffic.c_str());
+            owner->updateTraffic(traffic);
         }
 
         if (opcode == "f") {
