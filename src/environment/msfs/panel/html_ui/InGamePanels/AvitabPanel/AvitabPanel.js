@@ -62,7 +62,7 @@ class AvitabHttp {
         const lat = SimVar.GetSimVarValue("PLANE LATITUDE", "degree latitude");
         const lon = SimVar.GetSimVarValue("PLANE LONGITUDE", "degree longitude");
         const alt = SimVar.GetSimVarValue("PLANE ALTITUDE", "meters");
-        const hdg = SimVar.GetSimVarValue("PLANE HEADING DEGREES TRUE", "radians");
+        const hdg = SimVar.GetSimVarValue("PLANE HEADING DEGREES TRUE", "degree");
         var self = this;
         let xhttp = new XMLHttpRequest();
         let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + "&lt=" + lat.toFixed(4) + "&ln=" + lon.toFixed(4) + "&al=" + alt.toFixed(1) + "&hg=" + hdg.toFixed(0);
