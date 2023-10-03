@@ -27,6 +27,7 @@ public:
     ~IngamePanelGuiDriver();
 
     void readPointerState(int &x, int &y, bool &pressed) override;
+    void setPointerPosition(int x, int y);
     void setPointerState(int x, int y, bool pressed);
 
     int getWheelDirection() override;

@@ -84,7 +84,7 @@ void AirportApp::onSearchEntered(const std::string& code) {
     } else if (airports.size() == 1) {
         onAirportSelected(airports.front());
         return;
-    } else if (airports.size() >= xdata::World::MAX_SEARCH_RESULTS) {
+    } else if (airports.size() >= world::World::MAX_SEARCH_RESULTS) {
         searchLabel->setText("Too many results, only showing first " + std::to_string(airports.size()));
     } else {
         searchLabel->setText("");
@@ -110,7 +110,7 @@ void AirportApp::onSearchEntered(const std::string& code) {
     });
 }
 
-void AirportApp::onAirportSelected(std::shared_ptr<xdata::Airport> airport) {
+void AirportApp::onAirportSelected(std::shared_ptr<world::Airport> airport) {
     for (auto tabPage: pages) {
         if (tabPage.airport == airport) {
             tabs->setActiveTab(tabs->getTabIndex(tabPage.page));
@@ -166,7 +166,7 @@ void AirportApp::removeTab(std::shared_ptr<Page> page) {
     }
 }
 
-void AirportApp::fillPage(std::shared_ptr<Page> page, std::shared_ptr<xdata::Airport> airport) {
+void AirportApp::fillPage(std::shared_ptr<Page> page, std::shared_ptr<world::Airport> airport) {
     std::stringstream str;
 
     str << airport->getName() + ", elevation " + std::to_string(airport->getElevation()) + " ft AMSL\n";
@@ -184,20 +184,20 @@ void AirportApp::fillPage(std::shared_ptr<Page> page, std::shared_ptr<xdata::Air
     tab.label->setVisible(true);
 }
 
-std::string AirportApp::toATCInfo(std::shared_ptr<xdata::Airport> airport) {
+std::string AirportApp::toATCInfo(std::shared_ptr<world::Airport> airport) {
     std::stringstream str;
     str << "ATC Frequencies\n";
-    str << toATCString("    Recorded Messages", airport, xdata::Airport::ATCFrequency::RECORDED);
-    str << toATCString("    UniCom", airport, xdata::Airport::ATCFrequency::UNICOM);
-    str << toATCString("    Delivery", airport, xdata::Airport::ATCFrequency::CLD);
-    str << toATCString("    Ground", airport, xdata::Airport::ATCFrequency::GND);
-    str << toATCString("    Tower", airport, xdata::Airport::ATCFrequency::TWR);
-    str << toATCString("    Approach", airport, xdata::Airport::ATCFrequency::APP);
-    str << toATCString("    Departure", airport, xdata::Airport::ATCFrequency::DEP);
+    str << toATCString("    Recorded Messages", airport, world::Airport::ATCFrequency::RECORDED);
+    str << toATCString("    UniCom", airport, world::Airport::ATCFrequency::UNICOM);
+    str << toATCString("    Delivery", airport, world::Airport::ATCFrequency::CLD);
+    str << toATCString("    Ground", airport, world::Airport::ATCFrequency::GND);
+    str << toATCString("    Tower", airport, world::Airport::ATCFrequency::TWR);
+    str << toATCString("    Approach", airport, world::Airport::ATCFrequency::APP);
+    str << toATCString("    Departure", airport, world::Airport::ATCFrequency::DEP);
     return str.str();
 }
 
-std::string AirportApp::toATCString(const std::string &name, std::shared_ptr<xdata::Airport> airport, xdata::Airport::ATCFrequency type) {
+std::string AirportApp::toATCString(const std::string &name, std::shared_ptr<world::Airport> airport, world::Airport::ATCFrequency type) {
     std::stringstream str;
     auto &freqs = airport->getATCFrequencies(type);
     for (auto &frq: freqs) {
@@ -206,7 +206,7 @@ std::string AirportApp::toATCString(const std::string &name, std::shared_ptr<xda
     return str.str();
 }
 
-std::string AirportApp::toRunwayInfo(std::shared_ptr<xdata::Airport> airport) {
+std::string AirportApp::toRunwayInfo(std::shared_ptr<world::Airport> airport) {
     if (airport->hasOnlyHeliports()) {
         return "No runways\n";
     }
@@ -217,7 +217,7 @@ std::string AirportApp::toRunwayInfo(std::shared_ptr<xdata::Airport> airport) {
     auto magneticVariation = api().getMagneticVariation(aptLoc.latitude, aptLoc.longitude);
 
     str << "Runways:\n";
-    airport->forEachRunway([&str, &magneticVariation] (const std::shared_ptr<xdata::Runway> rwy) {
+    airport->forEachRunway([&str, &magneticVariation] (const std::shared_ptr<world::Runway> rwy) {
         str << "  " + rwy->getID();
         auto ils = rwy->getILSData();
         auto elevation = rwy->getElevation();
@@ -243,7 +243,7 @@ std::string AirportApp::toRunwayInfo(std::shared_ptr<xdata::Airport> airport) {
         }
         float length = rwy->getLength();
         if (!std::isnan(length)) {
-            str << ", " << std::to_string((int) (length * xdata::M_TO_FT + 0.5)) << " ft";
+            str << ", " << std::to_string((int) (length * world::M_TO_FT + 0.5)) << " ft";
         }
         str << ", " << rwy->getSurfaceTypeDescription();
         str << "\n";
@@ -251,7 +251,7 @@ std::string AirportApp::toRunwayInfo(std::shared_ptr<xdata::Airport> airport) {
     return str.str();
 }
 
-std::string AirportApp::toWeatherInfo(std::shared_ptr<xdata::Airport> airport) {
+std::string AirportApp::toWeatherInfo(std::shared_ptr<world::Airport> airport) {
     return api().getMETARForAirport(airport->getID());
 }
 
@@ -264,7 +264,7 @@ AirportApp::TabPage &AirportApp::findPage(std::shared_ptr<Page> page) {
     throw std::runtime_error("Unknown page");
 }
 
-void AirportApp::toggleCharts(std::shared_ptr<Page> page, std::shared_ptr<xdata::Airport> airport) {
+void AirportApp::toggleCharts(std::shared_ptr<Page> page, std::shared_ptr<world::Airport> airport) {
     TabPage &tab = findPage(page);
     if (tab.charts.empty()) {
         fillChartsPage(page, airport);
@@ -274,7 +274,7 @@ void AirportApp::toggleCharts(std::shared_ptr<Page> page, std::shared_ptr<xdata:
     }
 }
 
-void AirportApp::fillChartsPage(std::shared_ptr<Page> page, std::shared_ptr<xdata::Airport> airport) {
+void AirportApp::fillChartsPage(std::shared_ptr<Page> page, std::shared_ptr<world::Airport> airport) {
     auto svc = api().getChartService();
 
     TabPage &tab = findPage(page);
@@ -382,7 +382,6 @@ void AirportApp::onChartsLoaded(std::shared_ptr<Page> page, const apis::ChartSer
 void AirportApp::onChartLoaded(std::shared_ptr<Page> page) {
     TabPage &tab = findPage(page);
 
-    tab.label->setVisible(false);
     if (api().getSettings()->getGeneralSetting<bool>("show_overlays_in_airport_app")) {
         tab.overlays = api().getSettings()->getOverlayConfig();
     } else {
@@ -390,57 +389,73 @@ void AirportApp::onChartLoaded(std::shared_ptr<Page> page) {
     }
     tab.window->addSymbol(Widget::Symbol::MINUS, [this, page] {
         TabPage &tab = findPage(page);
-        tab.map->zoomOut();
+        if (tab.map) {
+            tab.map->zoomOut();
+        }
     });
     tab.window->addSymbol(Widget::Symbol::PLUS, [this, page] {
         TabPage &tab = findPage(page);
-        tab.map->zoomIn();
+        if (tab.map) {
+            tab.map->zoomIn();
+        }
     });
     tab.window->addSymbol(Widget::Symbol::ROTATE, [this, page] {
         TabPage &tab = findPage(page);
-        tab.mapStitcher->rotateRight();
+        if (tab.map) {
+            tab.mapStitcher->rotateRight();
+        }
     });
     tab.nightModeButton = tab.window->addSymbol(Widget::Symbol::IMAGE, [this, page] () {
         TabPage &tab = findPage(page);
-        nightMode = !nightMode;
-        tab.nightModeButton->setToggleState(nightMode);
-        tab.chart->changeNightMode(tab.mapSource, nightMode);
-        tab.mapStitcher->invalidateCache();
+        if (tab.map) {
+            nightMode = !nightMode;
+            tab.nightModeButton->setToggleState(nightMode);
+            tab.chart->changeNightMode(tab.mapSource, nightMode);
+            tab.mapStitcher->invalidateCache();
+        }
     });
     tab.nightModeButton->setToggleState(nightMode);
-    tab.aircraftButton = tab.window->addSymbol(Widget::Symbol::GPS, [this, page] {
+    tab.trackButton = tab.window->addSymbol(Widget::Symbol::GPS, [this, page] {
         TabPage &tab = findPage(page);
-        tab.overlays->drawMyAircraft = !tab.overlays->drawMyAircraft;
-        tab.aircraftButton->setToggleState(tab.overlays->drawMyAircraft);
+        if (tab.map) {
+            tab.trackPlane = !tab.trackPlane;
+            tab.trackButton->setToggleState(tab.trackPlane);
+        }
     });
 
-    tab.mapImage = std::make_shared<img::Image>(tab.window->getContentWidth(), tab.window->getHeight(), 0);
-    tab.pixMap = std::make_shared<PixMap>(tab.window);
-    tab.pixMap->draw(*tab.mapImage);
-    tab.pixMap->setClickable(true);
-    tab.pixMap->setClickHandler([this, page] (int x, int y, bool pr, bool rel) { onMapPan(page, x, y, pr, rel); });
-    tab.pixMap->setDimensions(tab.window->getContentWidth(), tab.window->getHeight() - padHeight);
-    tab.pixMap->centerInParent();
+    try {
+        tab.mapImage = std::make_shared<img::Image>(tab.window->getContentWidth(), tab.window->getHeight(), 0);
+        tab.pixMap = std::make_shared<PixMap>(tab.window);
+        tab.pixMap->draw(*tab.mapImage);
+        tab.pixMap->setClickable(true);
+        tab.pixMap->setClickHandler([this, page] (int x, int y, bool pr, bool rel) { onMapPan(page, x, y, pr, rel); });
+        tab.pixMap->setDimensions(tab.window->getContentWidth(), tab.window->getHeight() - padHeight);
+        tab.pixMap->centerInParent();
 
-    tab.mapSource = tab.chart->createTileSource(nightMode);
-    tab.mapStitcher = std::make_shared<img::Stitcher>(tab.mapImage, tab.mapSource);
-    tab.map = std::make_shared<maps::OverlayedMap>(tab.mapStitcher, tab.overlays);
-    tab.map->loadOverlayIcons(api().getDataPath() + "icons/");
-    tab.map->setRedrawCallback([this, page] () { redrawPage(page); });
-    tab.map->setNavWorld(api().getNavWorld());
+        tab.mapSource = tab.chart->createTileSource(nightMode);
+        tab.mapStitcher = std::make_shared<img::Stitcher>(tab.mapImage, tab.mapSource);
+        tab.map = std::make_shared<maps::OverlayedMap>(tab.mapStitcher, tab.overlays);
+        tab.map->loadOverlayIcons(api().getDataPath() + "icons/");
+        tab.map->setRedrawCallback([this, page] () { redrawPage(page); });
+        tab.map->setNavWorld(api().getNavWorld());
 
-    tab.aircraftButton->setToggleState(tab.map->getOverlayConfig().drawMyAircraft);
+        tab.trackButton->setToggleState(tab.trackPlane);
 
-    if (tab.mapSource->getPageCount() > 1) {
-        tab.window->addSymbol(Widget::Symbol::RIGHT, [this, page] {
-            TabPage &tab = findPage(page);
-            tab.mapStitcher->nextPage();
-        });
+        if (tab.mapSource->getPageCount() > 1) {
+            tab.window->addSymbol(Widget::Symbol::RIGHT, [this, page] {
+                TabPage &tab = findPage(page);
+                tab.mapStitcher->nextPage();
+            });
 
-        tab.window->addSymbol(Widget::Symbol::LEFT, [this, page] {
-            TabPage &tab = findPage(page);
-            tab.mapStitcher->prevPage();
-        });
+            tab.window->addSymbol(Widget::Symbol::LEFT, [this, page] {
+                TabPage &tab = findPage(page);
+                tab.mapStitcher->prevPage();
+            });
+        }
+        tab.label->setVisible(false);
+    } catch (const std::exception &e) {
+        logger::warn("Couldn't load chart: %s", e.what());
+        tab.label->setText(e.what());
     }
 
     onTimer();
@@ -450,7 +465,10 @@ void AirportApp::onMapPan(std::shared_ptr<Page> page, int x, int y, bool start, 
     TabPage &tab = findPage(page);
 
     if (start) {
-        // trackPlane = false;
+        if (tab.trackPlane) {
+            tab.trackPlane = false;
+            tab.trackButton->setToggleState(tab.trackPlane);
+        }
     } else if (!end) {
         int panVecX = tab.panPosX - x;
         int panVecY = tab.panPosY - y;
@@ -501,6 +519,9 @@ bool AirportApp::onTimer() {
             std::vector<avitab::Location> loc;
             loc.push_back(api().getAircraftLocation(0));
             tab.map->setPlaneLocations(loc);
+            if (tab.trackPlane) {
+                tab.map->centerOnPlane();
+            }
             tab.map->doWork();
         }
     }

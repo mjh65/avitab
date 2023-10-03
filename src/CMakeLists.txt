@@ -11,6 +11,7 @@ endif()
 add_definitions(-DXPLM301=1 -DXPLM300=1 -DXPLM210=1 -DXPLM200=1)
 
 include(${CMAKE_CURRENT_LIST_DIR}/libimg/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/world/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/libxdata/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/charts/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/maps/CMakeLists.txt)
@@ -42,7 +43,7 @@ target_link_libraries(avitab_common
     ${PROJECT_SOURCE_DIR}/build-third/lib/libmbedcrypto.a
     ${PROJECT_SOURCE_DIR}/build-third/lib/libdetex.a
     ${PROJECT_SOURCE_DIR}/build-third/lib/libquickjs.a
-    xdata
+    world
 )
 
 if(WIN32)
@@ -64,6 +65,7 @@ if(WIN32)
         -static-libstdc++
         avitab_xplane
         avitab_common
+        xdata
         ${PROJECT_SOURCE_DIR}/build-third/lib/libcurl.a
         ${PROJECT_SOURCE_DIR}/build-third/lib/XPLM_64.lib
         opengl32
@@ -76,6 +78,7 @@ elseif(APPLE)
     target_link_libraries(avitab_plugin
         avitab_xplane
         avitab_common
+        xdata
         "-F${PROJECT_SOURCE_DIR}/build-third/lib/ -framework XPLM"
         "-framework OpenGL"
         curl
@@ -88,6 +91,7 @@ elseif(UNIX)
         -fPIC
         avitab_xplane
         avitab_common
+        xdata
         GL
     )
 endif()
@@ -114,6 +118,7 @@ if(WIN32)
         -static-libstdc++
         avitab_standalone
         avitab_common
+        xdata
         ${PROJECT_SOURCE_DIR}/build-third/lib/libcurl.a
         glfw3
         opengl32
@@ -129,6 +134,7 @@ elseif(APPLE)
     target_link_libraries(AviTab-standalone
         avitab_standalone
         avitab_common
+        xdata
         ${GLFW_STATIC_LIBRARIES}
         "-framework OpenGL"
         curl
@@ -137,6 +143,7 @@ elseif(UNIX)
     target_link_libraries(AviTab-standalone
         avitab_standalone
         avitab_common
+        xdata
         GL
         glfw
         pthread
@@ -157,6 +164,7 @@ if(WIN32 AND DEFINED ENV{MSFS_SDK})
         avitab_msfs_igps
         avitab_standalone
         avitab_common
+        xdata
         ${PROJECT_SOURCE_DIR}/build-third/lib/libcurl.a
         glfw3
         opengl32

@@ -20,7 +20,7 @@
 #include "IngamePanelGuiDriver.h"
 #include "src/Logger.h"
 #include "src/platform/Platform.h"
-#include "src/libxdata/world/World.h"
+#include "src/world/World.h"
 #include <tchar.h>
 #include <stdio.h>
 #include <strsafe.h>
@@ -56,7 +56,7 @@ void IngamePanelEnvironment::eventLoop()
     startPanelServer();
     while (driver->handleEvents()) {
         runEnvironmentCallbacks();
-        lastDrawTime = driver->getLastDrawTime() / 1000.0;
+        setLastFrameTime(driver->getLastDrawTime() / 1000.0);
     }
     driver.reset();
 }
@@ -85,6 +85,11 @@ void IngamePanelEnvironment::updateAircraftLocation(float x, float y, float a, f
     userLocation.longitude = x;
     userLocation.heading = h;
     userLocation.elevation = a;
+}
+
+void IngamePanelEnvironment::updateMousePosition(int x, int y)
+{
+    (std::dynamic_pointer_cast<IngamePanelGuiDriver>(driver))->setPointerPosition(x, y);
 }
 
 void IngamePanelEnvironment::updateMouseState(int x, int y, int button)

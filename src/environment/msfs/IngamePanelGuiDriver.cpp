@@ -32,10 +32,15 @@ void IngamePanelGuiDriver::readPointerState(int &x, int &y, bool &pressed)
     pressed = panelMousePressed;
 }
 
-void IngamePanelGuiDriver::setPointerState(int x, int y, bool pressed)
+void IngamePanelGuiDriver::setPointerPosition(int x, int y)
 {
     panelMouseX = x;
     panelMouseY = y;
+}
+
+void IngamePanelGuiDriver::setPointerState(int x, int y, bool pressed)
+{
+    setPointerPosition(x,y);
     panelMousePressed = pressed;
 }
 

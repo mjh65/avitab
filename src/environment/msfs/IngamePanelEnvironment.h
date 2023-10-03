@@ -40,6 +40,7 @@ public:
     avitab::Location getAircraftLocation(avitab::AircraftID id) override;
 
     void updateAircraftLocation(float x, float y, float a, float h);
+    void updateMousePosition(int x, int y);
     void updateMouseState(int x, int y, int button);
     void updateWheelState(bool up);
     void updateTraffic(std::string traffic);
