@@ -51,6 +51,11 @@ from the XPlane installation, and this can take some time.
 
 ## Release Notes
 
+### Release FS_IGP_0005 (2023/10/26)
+
+This update:
+- integrates latest changes of Avitab baseline code.
+
 ### Release FS_IGP_0004 (2023/10/03)
 
 This update:
