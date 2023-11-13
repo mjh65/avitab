@@ -20,7 +20,7 @@
 
 #include <string>
 #include <functional>
-#include "BaseParser.h"
+#include "src/world/parsers/BaseParser.h"
 
 namespace xdata {
 
@@ -33,7 +33,7 @@ public:
     void loadCustomScenery();
 private:
     Acceptor acceptor;
-    BaseParser parser;
+    world::BaseParser parser;
     std::string curData {};
 
     void parseLine();

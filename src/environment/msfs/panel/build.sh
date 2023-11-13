@@ -47,7 +47,7 @@ while :; do
     shift
 done
 
-# 
+#
 
 pkgname=avitab-ingamepanels-avitab
 basedir="$(dirname "$(readlink -fm "${BASH_SOURCE[0]}")")"

@@ -51,6 +51,11 @@ from the XPlane installation, and this can take some time.
 
 ## Release Notes
 
+### Release FS_IGP_0006 (2023/11/13)
+
+This update:
+- integrates latest changes of Avitab baseline code.
+
 ### Release FS_IGP_0005 (2023/10/26)
 
 This update:
@@ -91,5 +96,5 @@ We will eventual change the window to show the live Avitab log messages which ma
 The Avitab IGPS executable does not provide images if it is minimized.
 It will work correctly if it is put into the background, and this is currently the recommended mode of operation.
 
-Thanks for your interest,  
+Thanks for your interest,
 The Avitab-MSFS developers.

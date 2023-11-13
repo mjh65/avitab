@@ -19,10 +19,11 @@
 #include <iomanip>
 #include <cmath>
 #include "MapApp.h"
+#include "ghc/filesystem.hpp"
 #include "src/Logger.h"
 #include "src/platform/Platform.h"
 #include "src/platform/strtod.h"
-#include "src/maps/sources/OpenTopoSource.h"
+#include "src/maps/sources/OnlineSlippySource.h"
 #include "src/maps/sources/GeoTIFFSource.h"
 #include "src/maps/sources/PDFSource.h"
 #include "src/maps/sources/XPlaneSource.h"
@@ -85,21 +86,23 @@ void MapApp::createSettingsLayout() {
     openTopoLabel->alignRightOf(openTopoButton, 10);
     openTopoLabel->setManaged();
 
-    stamenButton = std::make_shared<Button>(settingsContainer, "Stamen");
-    stamenButton->setCallback([this] (const Button &) { setMapSource(MapSource::STAMEN_TERRAIN); });
-    stamenButton->setFit(false, true);
-    stamenButton->setDimensions(openTopoButton->getWidth(), openTopoButton->getHeight());
-    stamenButton->alignBelow(openTopoButton, 30);
-    auto stamenLabel = std::make_shared<Label>(settingsContainer,
-            "Map Data (c) OpenStreetMap\nEnglish map tiles by Stamen Design");
-    stamenLabel->alignRightOf(stamenButton, 10);
-    stamenLabel->setManaged();
+    onlineMapsButton = std::make_shared<Button>(settingsContainer, "Online");
+    onlineMapsButton->setCallback([this] (const Button &) { setMapSource(MapSource::ONLINE_TILES); });
+    onlineMapsButton->setFit(false, true);
+    onlineMapsButton->setDimensions(openTopoButton->getWidth(), openTopoButton->getHeight());
+    onlineMapsButton->alignBelow(openTopoButton, 10);
+    // The onlineMapsLabel is defined as a private variable; We want
+    // to refer to it throught the program's execution to update the label
+    // when selecting a different online map, or selecting a non-online map
+    onlineMapsLabel = std::make_shared<Label>(settingsContainer, baseOnlineMapsLabel);
+    onlineMapsLabel->alignRightOf(onlineMapsButton, 10);
+    onlineMapsLabel->setManaged();
 
     epsgButton = std::make_shared<Button>(settingsContainer, "EPSG-3857");
     epsgButton->setCallback([this] (const Button &) { setMapSource(MapSource::EPSG3857); });
     epsgButton->setFit(false, true);
     epsgButton->setDimensions(openTopoButton->getWidth(), openTopoButton->getHeight());
-    epsgButton->alignBelow(stamenButton, 20);
+    epsgButton->alignBelow(onlineMapsButton, 10);
     auto epsgLabel = std::make_shared<Label>(settingsContainer, "Uses slippy tiles that you downloaded.");
     epsgLabel->alignRightOf(epsgButton, 10);
     epsgLabel->setManaged();
@@ -137,15 +140,15 @@ void MapApp::setMapSource(MapSource style) {
 
     switch (style) {
     case MapSource::OPEN_TOPO:
-        newSource = std::make_shared<maps::OpenTopoSource>(
-            ".tile.opentopomap.org/",
+        newSource = std::make_shared<maps::OnlineSlippySource>(
+            std::vector<std::string>{
+                "a.tile.opentopomap.org",
+                "b.tile.opentopomap.org",
+                "c.tile.opentopomap.org",
+            },
+            "{z}/{x}/{y}.png",
+            0, 17, 256, 256,
             "Map Data (c) OpenStreetMap, SRTM - Map Style (c) OpenTopoMap (CC-BY-SA)");
-        setTileSource(newSource);
-        break;
-    case MapSource::STAMEN_TERRAIN:
-        newSource = std::make_shared<maps::OpenTopoSource>(
-            ".tile.stamen.com/terrain/",
-            "Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.");
         setTileSource(newSource);
         break;
     case MapSource::XPLANE:
@@ -173,7 +176,14 @@ void MapApp::setMapSource(MapSource style) {
     case MapSource::NAVIGRAPH_WORLD:
         selectNavigraph(maps::NavigraphMapType::WORLD);
         break;
+    case MapSource::ONLINE_TILES:
+        selectOnlineMaps();
+        break;
     }
+    // Update the current active map after the switch statement;
+    // If we reached at this point, the new map style has been applied successfully
+    // (i.e., no exceptions were thrown when trying to apply the map)
+    currentActiveMapSource = style;
 
     settingsContainer->setVisible(false);
 }
@@ -258,6 +268,114 @@ void MapApp::selectEPSG() {
         });
     });
     fileChooser->show(chooserContainer);
+    chooserContainer->setVisible(true);
+}
+
+void MapApp::selectOnlineMaps() {
+    auto showOnlineMapsError([this](std::vector<std::string> errorMsgs) {
+        // Lambda function to show an error in the online maps window
+        // when we have trouble loading the user-defined online map
+        // configuration. JSON configs are very delicate (an extra comma
+        // can cause trouble), so it will be annoying if the user configured
+        // some maps, but can't see anything when starting AviTab. At least
+        // an error message briefing the user and advising them to look at
+        // the AviTab logs for more information improves the user experience
+        containerWithClickableList = std::make_unique<ContainerWithClickableCustomList>(
+                &api(), "Error loading online maps");
+        containerWithClickableList->setListItems(errorMsgs);
+        containerWithClickableList->setSelectCallback([](int selectedItem) {});
+        containerWithClickableList->setCancelCallback([this] () {
+            api().executeLater([this] () {
+                containerWithClickableList.reset();
+                chooserContainer->setVisible(false);
+            });
+        });
+        containerWithClickableList->show(chooserContainer);
+        chooserContainer->setVisible(true);
+    });
+
+    slippyMaps.clear();
+    std::vector<std::string> slippyMapNames;
+
+    // Read the config
+    std::string mapConfigPath(api().getDataPath() + "online-maps/mapconfig.json");
+    fs::ifstream mapConfigFstream(fs::u8path(mapConfigPath));
+
+    if (!mapConfigFstream) {
+        logger::error("No mapconfig.json file found in '%s'",
+                mapConfigPath.c_str());
+        showOnlineMapsError(std::vector<std::string>{
+                "cannot load mapconfig.json from path:",
+                mapConfigPath});
+        return;
+    }
+
+    // Parse the config content
+    try {
+        const auto &mapConfig = nlohmann::json::parse(mapConfigFstream);
+        logger::verbose("Found %u maps in %s", mapConfig.size(), mapConfigPath.c_str());
+
+        uint32_t i = 0;
+        for (const auto &item : mapConfig.items()){
+            const auto &conf = item.value().get<maps::OnlineSlippyMapConfig>();
+            if (conf.enabled) {
+                slippyMaps.insert(std::pair<size_t, maps::OnlineSlippyMapConfig>(i++, conf));
+                slippyMapNames.push_back(conf.name);
+            }
+        }
+    } catch (const nlohmann::json::exception &e) {
+        logger::error("Failed to parse '%s': %s", mapConfigPath.c_str(), e.what());
+        showOnlineMapsError(std::vector<std::string>{
+                "Failed to parse mapconfig.json",
+                "Please check the AviTab logs for more details"});
+        return;
+    } catch (const std::runtime_error &e) {
+        logger::error("Failed to parse '%s': %s", mapConfigPath.c_str(), e.what());
+        showOnlineMapsError(std::vector<std::string>{
+                "Failed to parse mapconfig.json:",
+                e.what(),
+                "Please check the AviTab logs for more details"});
+        return;
+    }
+
+    // At this point we parse the config correctly - if the config is empty,
+    // Give a hint to the user that they need to populate the config and
+    // point the user to documentation
+    if (slippyMapNames.size() == 0) {
+        logger::warn("No enabled online maps found in %s", mapConfigPath.c_str());
+        showOnlineMapsError(std::vector<std::string>{
+                "No enabled online maps found in mapconfig.json",
+                "Please read the docs to learn how you can add your own",
+                "maps from an online source"});
+        return;
+    }
+
+    // List the user-defined online maps
+    containerWithClickableList = std::make_unique<ContainerWithClickableCustomList>(
+            &api(), "Select online slippy maps");
+    containerWithClickableList->setListItems(slippyMapNames);
+
+    containerWithClickableList->setSelectCallback([this](int selectedItem) {
+        std::shared_ptr<img::TileSource> newSource;
+        const auto &conf = slippyMaps.at(selectedItem);
+
+        newSource = std::make_shared<maps::OnlineSlippySource>(
+            conf.servers, conf.url, conf.minZoomLevel, conf.maxZoomLevel,
+            conf.tileWidthPx, conf.tileHeightPx, conf.copyright,
+            conf.protocol);
+
+        setTileSource(newSource);
+        currentActiveOnlineMap = conf.name;
+    });
+
+    containerWithClickableList->setCancelCallback([this] () {
+        api().executeLater([this] () {
+            containerWithClickableList.reset();
+            chooserContainer->setVisible(false);
+        });
+    });
+
+    containerWithClickableList->show(chooserContainer);
     chooserContainer->setVisible(true);
 }
 
@@ -368,6 +486,12 @@ void MapApp::onSettingsButton() {
         naviLabel->alignRightOf(naviWorldButton, 10);
         naviLabel->setManaged();
     }
+
+    if (currentActiveMapSource != MapSource::ONLINE_TILES) {
+        currentActiveOnlineMap = "";
+    } 
+    onlineMapsLabel->setText(baseOnlineMapsLabel + (
+                currentActiveOnlineMap != "" ? "\nCurrent active map: " + currentActiveOnlineMap : ""));
 
     settingsContainer->setVisible(!settingsContainer->isVisible());
 }

@@ -30,7 +30,7 @@ class IngamePanelEnvironment : public avitab::StandAloneEnvironment
 public:
     IngamePanelEnvironment();
     virtual ~IngamePanelEnvironment();
-    
+
     void eventLoop();
 
     std::shared_ptr<avitab::LVGLToolkit> createGUIToolkit() override;

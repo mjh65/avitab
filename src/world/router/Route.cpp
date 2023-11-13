@@ -18,11 +18,12 @@
 #include <limits>
 #include "Route.h"
 #include "src/Logger.h"
-#include "../models/airport/Airport.h"
 
 namespace world {
 
-Route::Route(std::shared_ptr<NavNode> start, std::shared_ptr<NavNode> dest):
+Route::Route(std::shared_ptr<world::World> w, std::shared_ptr<NavNode> start, std::shared_ptr<NavNode> dest):
+    world(w),
+    router(w),
     startNode(start),
     destNode(dest)
 {
@@ -54,11 +55,15 @@ void Route::find() {
     waypoints = router.findRoute(startNode, destNode);
 }
 
+void Route::loadRoute(std::vector<RouteFinder::RouteDirection> route) {
+    waypoints = route;
+}
+
 bool Route::checkEdge(const RouteFinder::EdgePtr via, const RouteFinder::NodePtr to) const {
     if (via->isProcedure()) {
         // We only allow SIDs, STARs etc. if they are start or end of the route.
         // This prevents routes that use SIDs and STARs of other airports as waypoints
-        return startNode->isConnectedTo(to) || to == destNode;
+        return world->areConnected(startNode, to) || (to == destNode);
     } else {
         // Normal airways are allowed if their level matches the desired level
         return via->supportsLevel(airwayLevel);

@@ -40,7 +40,7 @@ public:
             double initialTrueBearing,
             double initialMagneticBearing)>;
 
-    Route(std::shared_ptr<NavNode> start, std::shared_ptr<NavNode> dest);
+    Route(std::shared_ptr<world::World> world, std::shared_ptr<NavNode> start, std::shared_ptr<NavNode> dest);
 
     void setAirwayLevel(AirwayLevel level);
 
@@ -48,6 +48,7 @@ public:
     std::shared_ptr<NavNode> getDestination() const;
 
     void find();
+    void loadRoute(std::vector<RouteFinder::RouteDirection> route);
     void iterateRoute(RouteIterator f) const;
     void iterateLegs(LegIterator f) const;
     void iterateRouteShort(RouteIterator f) const;
@@ -57,6 +58,7 @@ public:
     double getRouteDistance() const;
 
 private:
+    std::shared_ptr<World> world;
     RouteFinder router;
     std::shared_ptr<NavNode> startNode, destNode;
     AirwayLevel airwayLevel = AirwayLevel::LOWER;

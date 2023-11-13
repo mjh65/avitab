@@ -9,7 +9,7 @@ add_custom_command(
         avitab-ingamepanels-avitab/InGamePanels/avitab-ingamepanels-avitab.spb
         avitab-ingamepanels-avitab/layout.json
         avitab-ingamepanels-avitab/manifest.json
-    COMMAND 
+    COMMAND
         ${CMAKE_CURRENT_LIST_DIR}/build.sh
     DEPENDS
         ${CMAKE_CURRENT_LIST_DIR}/build.sh

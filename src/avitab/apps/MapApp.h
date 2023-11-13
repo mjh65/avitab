@@ -18,10 +18,9 @@
 #ifndef SRC_AVITAB_APPS_MAPAPP_H_
 #define SRC_AVITAB_APPS_MAPAPP_H_
 
-#include <memory>
-#include <vector>
 #include "App.h"
 #include "src/avitab/apps/components/FileChooser.h"
+#include "src/avitab/apps/components/ContainerWithClickableCustomList.h"
 #include "src/gui_toolkit/widgets/PixMap.h"
 #include "src/gui_toolkit/widgets/Window.h"
 #include "src/gui_toolkit/widgets/Button.h"
@@ -37,6 +36,7 @@
 #include "src/libimg/Image.h"
 #include "src/maps/OverlayedMap.h"
 #include "src/maps/sources/NavigraphSource.h"
+#include "src/maps/sources/OnlineSlippyMapConfig.h"
 
 namespace avitab {
 
@@ -51,7 +51,6 @@ public:
 private:
     enum class MapSource {
         OPEN_TOPO,
-        STAMEN_TERRAIN,
         XPLANE,
         MERCATOR,
         GEOTIFF,
@@ -60,10 +59,14 @@ private:
         NAVIGRAPH_LOW,
         NAVIGRAPH_VFR,
         NAVIGRAPH_WORLD,
+        ONLINE_TILES,
     };
 
+    MapSource currentActiveMapSource;
+    std::string currentActiveOnlineMap;
     std::shared_ptr<maps::OverlayConfig> overlayConf;
     std::unique_ptr<FileChooser> fileChooser;
+    std::unique_ptr<ContainerWithClickableCustomList> containerWithClickableList;
     std::shared_ptr<img::TileSource> tileSource;
     std::shared_ptr<img::Image> mapImage;
     std::shared_ptr<img::Stitcher> mapStitcher;
@@ -74,7 +77,7 @@ private:
     std::shared_ptr<Button> trackButton;
     std::shared_ptr<Button> rotateButton;
     std::shared_ptr<Container> settingsContainer, chooserContainer, overlaysContainer;
-    std::shared_ptr<Button> openTopoButton, stamenButton, mercatorButton, xplaneButton, geoTiffButton, epsgButton, naviLowButton, naviHighButton, naviVFRButton, naviWorldButton;
+    std::shared_ptr<Button> openTopoButton, stamenButton, mercatorButton, xplaneButton, geoTiffButton, epsgButton, naviLowButton, naviHighButton, naviVFRButton, naviWorldButton, onlineMapsButton;
     std::shared_ptr<Label> overlayLabel;
     std::shared_ptr<Checkbox> myAircraftCheckbox, otherAircraftCheckbox, routeCheckbox;
     std::shared_ptr<Checkbox> airportCheckbox, heliseaportCheckbox, airstripCheckbox;
@@ -87,6 +90,10 @@ private:
     std::unique_ptr<Keyboard> keyboard;
 
     std::shared_ptr<avitab::Settings> savedSettings;
+    std::map<size_t, maps::OnlineSlippyMapConfig> slippyMaps;
+
+    const std::string baseOnlineMapsLabel = "Select slippy tiles from online sources.";
+    std::shared_ptr<Label> onlineMapsLabel;
 
     Timer updateTimer;
     bool trackPlane = true;
@@ -102,6 +109,7 @@ private:
     void selectGeoTIFF();
     void selectMercator();
     void selectEPSG();
+    void selectOnlineMaps();
     void selectNavigraph(maps::NavigraphMapType type);
     void selectUserFixesFile();
 
