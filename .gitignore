@@ -46,6 +46,7 @@ cmake-build-debug
 
 # VSCode IDE
 .vscode/
+*.code-workspace
 
 # clangd index and compilation database
 .cache

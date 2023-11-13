@@ -5,7 +5,7 @@ add_library(avitab_common "${CMAKE_CURRENT_LIST_DIR}/Logger.cpp")
 add_library(avitab_xplane "")
 add_library(avitab_standalone "")
 if(WIN32 AND DEFINED ENV{MSFS_SDK})
-add_library(avitab_msfs "")
+add_library(avitab_msfs_igps "")
 endif()
 
 add_definitions(-DXPLM301=1 -DXPLM300=1 -DXPLM210=1 -DXPLM200=1)
@@ -151,39 +151,29 @@ elseif(UNIX)
 endif()
 
 if(WIN32 AND DEFINED ENV{MSFS_SDK})
-    # Microsoft Flight Simulator Add-on
+    # Microsoft Flight Simulator In-game Panel server
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-comment")
-    add_executable(AviTab-msfs
-        ${CMAKE_CURRENT_LIST_DIR}/MsfsAddon.cpp
+    add_executable(AviTab-msfs-igps
+        ${CMAKE_CURRENT_LIST_DIR}/MsfsPanelServer.cpp
     )
 
-    add_library(SimConnect STATIC IMPORTED)
-    set_property(TARGET SimConnect PROPERTY IMPORTED_LOCATION "$ENV{MSFS_SDK}/SimConnect SDK/lib/SimConnect.dll")
-    set_property(TARGET SimConnect PROPERTY IMPORTED_IMPLIB "$ENV{MSFS_SDK}/SimConnect SDK/lib/SimConnect.lib")
-
-    target_link_libraries(AviTab-msfs
+    target_link_libraries(AviTab-msfs-igps
         -static
         -static-libgcc
         -static-libstdc++
-        avitab_msfs
+        avitab_msfs_igps
         avitab_standalone
         avitab_common
         xdata
-        SimConnect
         ${PROJECT_SOURCE_DIR}/build-third/lib/libcurl.a
         glfw3
         opengl32
         -Wl,--subsystem,windows
     )
 
-    add_custom_command ( TARGET AviTab-msfs POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:SimConnect> $<TARGET_FILE_DIR:AviTab-msfs>
-    )
-
-    add_custom_command ( TARGET AviTab-msfs POST_BUILD
+    add_custom_command ( TARGET AviTab-msfs-igps POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_LIST_DIR}/../res" $<TARGET_FILE_DIR:AviTab-msfs>
+        "${CMAKE_CURRENT_LIST_DIR}/../res" $<TARGET_FILE_DIR:AviTab-msfs-igps>
     )
 
 endif()
