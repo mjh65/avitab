@@ -46,10 +46,10 @@ class AvitabHttp {
         xhttp.open("GET", url);
         xhttp.send();
     }
-    wheelEvent(d) {
+    wheelEvent(x,y,d) {
         var self = this;
         let xhttp = new XMLHttpRequest();
-        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + ((d<0) ? "&wu" : "&wd");
+        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + "&mx=" + x + "&my=" + y + ((d<0) ? "&wu" : "&wd");
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 self.onResponse(this);
@@ -190,7 +190,7 @@ class AvitabElement extends TemplateElement {
                 this.http.mouseEvent(Math.round(800 * e.offsetX / this.canvasX), Math.round(480 * e.offsetY / this.canvasY), 0);
             });
             this.canvas.addEventListener("wheel", (e) => {
-                this.http.wheelEvent(e.deltaY);
+                this.http.wheelEvent(Math.round(800 * e.offsetX / this.canvasX), Math.round(480 * e.offsetY / this.canvasY), e.deltaY);
             });
         }
     }

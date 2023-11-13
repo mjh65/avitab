@@ -51,14 +51,20 @@ from the XPlane installation, and this can take some time.
 
 ## Release Notes
 
-### Release FS_IGP_0003
+### Release FS_IGP_0004 (2023/10/03)
+
+This update:
+- fixes a bug with mouse scrollwheel handling,
+- integrates latest changes of Avitab baseline code.
+
+### Release FS_IGP_0003 (2023/05/11)
 
 This update:
 - integrates release 0.6.2 of the Avitab baseline code,
 - adds Chartfox support,
 - fixes a bug with the user aircraft orientation on the map overlay.
 
-### Release FS_IGP_0002
+### Release FS_IGP_0002 (2023/05/07)
 
 This update:
 - shows other aircraft (traffic) in the Avitab map application.

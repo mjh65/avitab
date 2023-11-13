@@ -87,6 +87,11 @@ void IngamePanelEnvironment::updateAircraftLocation(float x, float y, float a, f
     userLocation.elevation = a;
 }
 
+void IngamePanelEnvironment::updateMousePosition(int x, int y)
+{
+    (std::dynamic_pointer_cast<IngamePanelGuiDriver>(driver))->setPointerPosition(x, y);
+}
+
 void IngamePanelEnvironment::updateMouseState(int x, int y, int button)
 {
     (std::dynamic_pointer_cast<IngamePanelGuiDriver>(driver))->setPointerState(x, y, (button != 0));

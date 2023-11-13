@@ -203,20 +203,22 @@ bool PanelServer::processRequest(HttpReq *req)
             owner->updateAircraftLocation(std::stof(longitude), std::stof(latitude), std::stof(altitude), std::stof(heading));
         }
 
-        // if provided, get mouse information and send it to the driver
-        std::string mx, my, button;
-        if (req->getQueryString("mx",mx) && req->getQueryString("my",my) && req->getQueryString("mb",button)) {
-            LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Got mouse state: %s %s %s", mx.c_str(), my.c_str(), button.c_str());
-            owner->updateMouseState(std::stoi(mx), std::stoi(my), std::stoi(button));
-        }
+        // if provided, get mouse or wheel information and send it to the driver
+        std::string mx, my;
+        if (req->getQueryString("mx",mx) && req->getQueryString("my",my)) {
+            std::string button, wheel;
 
-        // if provided, get wheel information and send it to the driver
-        std::string wheel;
-        auto wheelUp = req->getQueryString("wu",wheel);
-        auto wheelDown = req->getQueryString("wd",wheel);
-        if (wheelUp || wheelDown) {
-            LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Got wheel event: %s", wheelUp ? "up" : "down");
-            owner->updateWheelState(wheelUp);
+            if (req->getQueryString("mb",button)) {
+                LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Got mouse state: %s %s %s", mx.c_str(), my.c_str(), button.c_str());
+                owner->updateMouseState(std::stoi(mx), std::stoi(my), std::stoi(button));
+            }
+            auto wheelUp = req->getQueryString("wu",wheel);
+            auto wheelDown = req->getQueryString("wd",wheel);
+            if (wheelUp || wheelDown) {
+                LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Got wheel event: %s", wheelUp ? "up" : "down");
+                owner->updateMousePosition(std::stoi(mx), std::stoi(my));
+                owner->updateWheelState(wheelUp);
+            }
         }
 
         // if provided, get other aircraft information and pass it to the environment
