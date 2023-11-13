@@ -51,14 +51,19 @@ from the XPlane installation, and this can take some time.
 
 ## Release Notes
 
+### Release FS_IGP_0003
+
+This update:
+- integrates release 0.6.2 of the Avitab baseline code,
+- adds Chartfox support,
+- fixes a bug with the user aircraft orientation on the map overlay.
+
 ### Release FS_IGP_0002
 
-This update adds display of other aircraft (traffic) in the Avitab map application.
-Traffic shown is obtained by querying MSFS, and other developers have already noted that
-there are some issues with this data.
-Currently traffic information appears to be restricted to other live players - AI aircraft are not shown.
-
-Resizing the panel will now maintain the 800x480 (5x3) aspect ratio of the Avitab display.
+This update:
+- shows other aircraft (traffic) in the Avitab map application.
+Currently traffic information appears to be restricted to other live players (AI aircraft are not shown),
+- maintains the 800x480 (5x3) aspect ratio of the Avitab display when the panel is resized.
 
 ### Known Quirks and Issues
 

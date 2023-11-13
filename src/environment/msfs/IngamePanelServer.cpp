@@ -200,7 +200,7 @@ bool PanelServer::processRequest(HttpReq *req)
         std::string longitude, latitude, altitude, heading;
         if (req->getQueryString("lt",latitude) && req->getQueryString("ln",longitude) && req->getQueryString("al",altitude) && req->getQueryString("hg",heading)) {
             LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Got position: %s,%s,%s,%s", latitude.c_str(), longitude.c_str(), altitude.c_str(), heading.c_str());
-            owner->updateAircraftLocation(std::stof(longitude), std::stof(latitude), std::stof(altitude), 57.2958f * std::stof(heading));
+            owner->updateAircraftLocation(std::stof(longitude), std::stof(latitude), std::stof(altitude), std::stof(heading));
         }
 
         // if provided, get mouse information and send it to the driver
