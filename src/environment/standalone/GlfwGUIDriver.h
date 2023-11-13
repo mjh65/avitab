@@ -42,10 +42,13 @@ public:
     void readPointerState(int &x, int &y, bool &pressed) override;
     int getWheelDirection() override;
     ~GlfwGUIDriver();
+
+protected:
+    std::mutex driverMutex;
+
 private:
     static constexpr const float ZOOM = 1.5f;
 
-    std::mutex driverMutex;
     GLFWwindow *window {};
     GLuint textureId{};
     std::atomic<uint32_t> lastDrawTime {0};

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<SimBase.Document Type="InGamePanels" version="1,0">
+  <Filename>InGamePanel_AvitabPanel.spb</Filename>
+  <InGamePanels.InGamePanelDefinition id="PANEL_AVITAB_PANEL" Name="Avitab" url="html_UI/ingamePanels/AvitabPanel/AvitabPanel.html"
+                                        resizeDirections="Both" minWidth="40" minHeight="23" defaultWidth="80" defaultHeight="46" defaultTop="2" defaultRight="2"
+                                        icon="ICON_TOOLBAR_AVITAB_PANEL" buttonVisible="true">
+  </InGamePanels.InGamePanelDefinition>
+</SimBase.Document>

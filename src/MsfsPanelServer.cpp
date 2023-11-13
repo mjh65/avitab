@@ -18,7 +18,7 @@
 #include <memory>
 #include <thread>
 #include <iostream>
-#include "src/environment/msfs/MsfsAddonEnvironment.h"
+#include "src/environment/msfs/IngamePanelEnvironment.h"
 #include "src/avitab/AviTab.h"
 #include "src/Logger.h"
 #include "src/platform/CrashHandler.h"
@@ -28,7 +28,7 @@ int main() {
 
     try {
         // Using the heap so we can debug destructors with log messages
-        auto env = std::make_shared<avitab::MsfsAddonEnvironment>();
+        auto env = std::make_shared<msfs::IngamePanelEnvironment>();
         env->loadConfig();
         logger::setStdOut(env->getConfig()->getBool("/AviTab/logToStdOut"));
         logger::init(env->getProgramPath());
