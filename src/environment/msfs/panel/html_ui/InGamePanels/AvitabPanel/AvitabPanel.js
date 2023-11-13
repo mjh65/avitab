@@ -5,8 +5,9 @@ document.addEventListener('beforeunload', function () {
 }, false);
 
 class AvitabHttp {
-    constructor(i) {
+    constructor(i,m) {
         this.imageBuffer = i;
+        this.navManager = m;
         this.reqId = 1;
         this.lastResponseTime = 0;
         this.lastUpdateTime = 0;
@@ -32,12 +33,34 @@ class AvitabHttp {
     onResponse(resp) {
         //console.log("onResponse " + resp.responseText);
         this.lastResponseTime = Date.now();
-        // TODO - extract server status info from resp.responseText
+        const fields = resp.responseText.split(":");
+        if (fields[0] == "NAV") {
+            let lat = Number(fields[1]);
+            let lon = Number(fields[2]);
+            const ca = this.navManager.get();
+            if ((ca == null) || (ca.lat != lat) || (ca.lon != lon)) {
+                // update the current nav area
+                console.log("visitNavArea " + fields[1] + " " + fields[2]);
+                this.navManager.visit(lat,lon);
+            }
+        }
+    }
+    worldReport(s) {
+        var self = this;
+        let xhttp = new XMLHttpRequest();
+        let url = "http://127.0.0.1:26730/w?t=" + (this.reqId++) + "&nv=" + s;
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                self.onResponse(this);
+            }
+        };
+        xhttp.open("GET", url);
+        xhttp.send();
     }
     mouseEvent(x,y,b) {
         var self = this;
         let xhttp = new XMLHttpRequest();
-        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + "&mx=" + x + "&my=" + y + "&mb=" + b;
+        let url = "http://127.0.0.1:26730/e?t=" + (this.reqId++) + "&mx=" + x + "&my=" + y + "&mb=" + b;
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 self.onResponse(this);
@@ -49,7 +72,7 @@ class AvitabHttp {
     wheelEvent(x,y,d) {
         var self = this;
         let xhttp = new XMLHttpRequest();
-        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + "&mx=" + x + "&my=" + y + ((d<0) ? "&wu" : "&wd");
+        let url = "http://127.0.0.1:26730/e?t=" + (this.reqId++) + "&mx=" + x + "&my=" + y + ((d<0) ? "&wu" : "&wd");
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 self.onResponse(this);
@@ -65,7 +88,7 @@ class AvitabHttp {
         const hdg = SimVar.GetSimVarValue("PLANE HEADING DEGREES TRUE", "degree");
         var self = this;
         let xhttp = new XMLHttpRequest();
-        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + "&lt=" + lat.toFixed(4) + "&ln=" + lon.toFixed(4) + "&al=" + alt.toFixed(1) + "&hg=" + hdg.toFixed(0);
+        let url = "http://127.0.0.1:26730/u?t=" + (this.reqId++) + "&lt=" + lat.toFixed(4) + "&ln=" + lon.toFixed(4) + "&al=" + alt.toFixed(1) + "&hg=" + hdg.toFixed(0);
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 self.onResponse(this);
@@ -77,7 +100,7 @@ class AvitabHttp {
     trafficUpdate(ta) {
         var self = this;
         let xhttp = new XMLHttpRequest();
-        let url = "http://127.0.0.1:26730/m?t=" + (this.reqId++) + "&tr=";
+        let url = "http://127.0.0.1:26730/u?t=" + (this.reqId++) + "&tr=";
         for (let i = 0; i < ta.length; i++) {
             const entry = ta[i];
             url = url + entry.lat.toFixed(4) + ',' + entry.lon.toFixed(4) + ',' + entry.alt.toFixed(1) + ',' + entry.heading.toFixed(0) + '_';
@@ -121,6 +144,15 @@ class AvitabHttp {
             this.imageBuffer.src = url;
         }
 
+        // send any nav data responses that are ready
+        let area = this.navManager.get();
+        if (area) {
+            let node = area.getNextNode();
+            if (node) {
+                this.worldReport(node);
+            }
+        }
+
         // let the caller know if a new image is ready for drawing, or if connection is lost
         let ready = this.imageReady;
         this.imageReady = false;
@@ -140,6 +172,16 @@ class AvitabElement extends TemplateElement {
         this.imageBuffer = null;
         this.mouseDown = false;
     }
+    loadScript(url, callback) {
+        var script = document.createElement("script");
+        script.type = "text/javascript";
+        script.onload = function() { callback(url); };
+        script.src = url;
+        document.getElementsByTagName("head")[0].appendChild( script );
+    }
+    loadedCallback(url) {
+        console.log('loaded script ' + url);
+    }
     connectedCallback() {
         //console.log('connectedCallback()');
         super.connectedCallback();
@@ -149,7 +191,8 @@ class AvitabElement extends TemplateElement {
         this.borderElement = document.getElementById("AvitabDisplay");
         this.canvas = document.getElementById("AvitabCanvas");
         this.imageBuffer = document.getElementById("ImageBuffer");
-        this.http = new AvitabHttp(this.imageBuffer);
+        this.navmgr = new NavManager();
+        this.http = new AvitabHttp(this.imageBuffer, this.navmgr);
 
         if (this.ingameUi) {
             this.ingameUi.addEventListener("panelActive", (e) => {
@@ -161,6 +204,12 @@ class AvitabElement extends TemplateElement {
                     }
                     if (!AvitabIsLoaded) {
                         return;
+                    }
+                    if (typeof window.AvitabNodesIsLoaded == 'undefined') {
+                        console.log('AvitabNodes.js not yet loaded');
+                    }
+                    if (typeof window.AvitabWorldIsLoaded == 'undefined') {
+                        console.log('AvitabWorld.js not yet loaded');
                     }
                     this.flightLoop();
                     requestAnimationFrame(updateLoop);
@@ -226,7 +275,6 @@ class AvitabElement extends TemplateElement {
         ctx.fillStyle = "black";
         ctx.fillText("!no response from Avitab-msfs-igps.exe!", 70, 350);
     }
-
     flightLoop() {
         let res = this.http.update();
         if (res[1]) {

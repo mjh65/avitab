@@ -183,7 +183,7 @@ void PanelServer::connectionLoop()
 bool PanelServer::processRequest(HttpReq *req)
 {
     bool keepAlive = false;
-    auto opcode = req->getUrl().substr(1,1);
+    char opcode = req->getUrl().substr(1,1)[0];
     std::ostringstream header;
     std::vector<unsigned char> content;
     header << "HTTP/1.1 ";
@@ -228,16 +228,29 @@ bool PanelServer::processRequest(HttpReq *req)
             owner->updateTraffic(traffic);
         }
 
-        if (opcode == "f") {
+        // if provided, get world information and pass it to the world manager
+        std::string world;
+        if (req->getQueryString("nv",world)) {
+            LOG_VERBOSE(SERVER_VERBOSE_LOGGING, "Got world information: %s", world.c_str());
+            owner->updateNavDatabase(world);
+        }
+
+        if (opcode == 'f') {
             // request for frame
             header << "200 OK\r\n";
             header << "Content-Type: image/bmp\r\n";
             owner->encodeBMP(content);
-        } else if (opcode == "m") {
+        } else if (std::string("euw").find(opcode) != std::string::npos) {
             header << "200 OK\r\n";
             header << "Content-Type: text/plain\r\n";
             header << "Access-Control-Allow-Origin: *\r\n";
-            std::string reply("OKEY-DOKEY");
+            std::string reply("NOP");
+            int lat, lon;
+            if (owner->getNavRequest(lat,lon)) {
+                std::ostringstream op;
+                op << "NAV:" << lat << ":" << lon << ":";
+                reply = op.str();
+            }
             content.resize(reply.size());
             std::copy(reply.begin(), reply.end(), content.begin());
         } else {
