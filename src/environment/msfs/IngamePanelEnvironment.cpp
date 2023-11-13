@@ -97,6 +97,42 @@ void IngamePanelEnvironment::updateWheelState(bool up)
     (std::dynamic_pointer_cast<IngamePanelGuiDriver>(driver))->setWheelDirection(up);
 }
 
+void IngamePanelEnvironment::updateTraffic(std::string traffic)
+{
+    std::vector<float> nums;
+    while (traffic.size()) {
+        size_t i = 0, j;
+        float lat = std::stof(traffic.substr(i), &j);
+        i += (j+1);
+        float lon = std::stof(traffic.substr(i), &j);
+        i += (j+1);
+        float alt = std::stof(traffic.substr(i), &j);
+        i += (j+1);
+        float hdg = std::stof(traffic.substr(i), &j);
+        i += j;
+        if ((i < traffic.size()) && (traffic[i] == '_')) {
+            nums.push_back(lat);
+            nums.push_back(lon);
+            nums.push_back(alt);
+            nums.push_back(hdg);
+            traffic.erase(0, i+1);
+        } else {
+            break;
+        }
+    }
+
+    std::lock_guard<std::mutex> lock(stateMutex);
+    otherLocations.clear();
+    for (auto i = nums.begin(); i != nums.end(); ) {
+        avitab::Location loc;
+        loc.latitude = *(i++);
+        loc.longitude = *(i++);
+        loc.elevation = *(i++);
+        loc.heading = *(i++);
+        otherLocations.push_back(loc);
+    }
+}
+
 void IngamePanelEnvironment::resetLocations()
 {
     std::lock_guard<std::mutex> lock(stateMutex);

@@ -42,6 +42,7 @@ public:
     void updateAircraftLocation(float x, float y, float a, float h);
     void updateMouseState(int x, int y, int button);
     void updateWheelState(bool up);
+    void updateTraffic(std::string traffic);
 
 private:
     void                            resetLocations();

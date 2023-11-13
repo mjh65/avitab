@@ -25,12 +25,13 @@
 
 <body id="Avitab" class="border-box">
     <aviators-tablet>
-        <ingame-ui id="AvitabPanel" panel-id="PANEL_AVITAB" title="" class="ingameUiFrame panelInvisible" title="Avitab" content-fit="true" min-width="160" min-height="90">
-            <section id="AvitabDisplay">
-                <canvas id="AvitabCanvas" width="800" height="480"></canvas>
-                <img id="FrameBuffer"></img>
-                <iframe id="Response"></iframe>
-            </section>
+        <ingame-ui id="AvitabPanel" panel-id="PANEL_AVITAB" title="" class="ingameUiFrame panelInvisible" title="Avitab" content-fit="true">
+            <div id="AvitabDisplay">
+                <canvas id="AvitabCanvas"></canvas>
+            </div>
+            <div id="ScratchArea">
+                <img id="ImageBuffer"></img>
+            </div>
         </ingame-ui>
     </aviators-tablet>
 </body>
