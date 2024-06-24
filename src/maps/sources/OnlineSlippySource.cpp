@@ -208,8 +208,14 @@ std::string OnlineSlippySource::getUniqueTileName(int page, int x, int y, int zo
         throw std::runtime_error("Invalid coordinates");
     }
 
-    // do not randomize host here so that caching works indepedent of host
-    return getTileURL(false, x, y, zoom);
+    // do not randomize host here so that caching works independent of host
+    std::string url = getTileURL(false, x, y, zoom);
+    // Remove anything after a '?'
+    size_t pos = url.find("?");
+    if (pos != std::string::npos) {
+        url.erase(pos, std::string::npos);
+    }
+    return url;
 }
 
 std::unique_ptr<img::Image> OnlineSlippySource::loadTileImage(int page, int x, int y, int zoom) {

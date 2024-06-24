@@ -50,7 +50,7 @@ public:
     void setURL(const std::string url);
     std::string getURL() const;
 
-    void setChartData(const std::vector<uint8_t> &blob, const std::string type);
+    void setChartData(const std::vector<uint8_t> &blob, const std::string type, const std::string &georef);
     const std::vector<uint8_t> getChartData() const;
 
 private:

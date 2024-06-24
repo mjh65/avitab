@@ -17,7 +17,6 @@
  */
 #include <stdexcept>
 #include <cmath>
-#include <nlohmann/json.hpp>
 #include "Calibration.h"
 #include "src/Logger.h"
 
@@ -58,7 +57,7 @@ void Calibration::setPoint3(double x, double y, double lat, double lon) {
     regLon3 = lon;
     northOffsetAngle = NAN;
     
-    calculateCalibration();
+    calculateLocalCalibration();
 }
 
 void Calibration::setAngle(double angle) {
@@ -69,7 +68,7 @@ void Calibration::setAngle(double angle) {
     regLat3 = NAN;
     regLon3 = NAN;
 
-    calculateCalibration();
+    calculateLocalCalibration();
 }
 
 void Calibration::setPreRotate(int angle) {
@@ -122,9 +121,8 @@ std::string Calibration::toString() const {
     return json.dump(2);
 }
 
-void Calibration::fromJsonString(const std::string& s) {
-    nlohmann::json json = nlohmann::json::parse(s);
-
+void Calibration::fromLocalJson(const nlohmann::json &json) {
+    logger::info("Loading hash-mapped json calibration file");
     using j = nlohmann::json;
 
     preRotate = json.value("/calibration/prerotate"_json_pointer, 0);
@@ -146,7 +144,33 @@ void Calibration::fromJsonString(const std::string& s) {
 
     northOffsetAngle = json.value("/calibration/northOffsetAngle"_json_pointer, NAN);
 
-    calculateCalibration();
+    calculateLocalCalibration();
+}
+
+void Calibration::fromChartfoxJson(const nlohmann::json &json, double aspectRatio) {
+    logger::info("Using calibration metadata from Chartfox:");
+    LOG_INFO(1, "%s", nlohmann::to_string(json).c_str());
+    double k = json.value("/k"_json_pointer, NAN);
+    int page = json.value("/page"_json_pointer, 0);
+    int pdf_page_rotation = json.value("/pdf_page_rotation"_json_pointer, 0);
+    double transform_angle = json.value("/transform_angle"_json_pointer, NAN);
+    double tx = json.value("/tx"_json_pointer, NAN);
+    double ty = json.value("/ty"_json_pointer, NAN);
+    LOG_INFO(1, "page=%d, pdf_page_rotation=%d", page, pdf_page_rotation);
+
+    calculateChartfoxCalibration(k, transform_angle, tx, ty, aspectRatio);
+}
+
+void Calibration::fromJsonString(const std::string& s, double aspectRatio) {
+    LOG_INFO(1, "%s", s.c_str());
+    nlohmann::json json = nlohmann::json::parse(s);
+    isChartfoxGeoreferenced = json.is_array() && (json.size() == 1);
+
+    if (isChartfoxGeoreferenced) {
+        fromChartfoxJson(json.at(0), aspectRatio);
+    } else {
+        fromLocalJson(json);
+    }
 }
 
 std::string Calibration::getKmlTagData(const std::string kml, const std::string tag) const {
@@ -210,7 +234,7 @@ std::string Calibration::getReport() const {
     return report;
 }
 
-void Calibration::calculateCalibration() {
+void Calibration::calculateLocalCalibration() {
     report = "Not calibrated";
 
     auto xy1 = mercator(regLat1, regLon1);
@@ -278,6 +302,32 @@ void Calibration::calculateCalibration() {
     logger::info("Calibration report : \n%s", report.c_str());
 }
 
+void Calibration::calculateChartfoxCalibration(double k, double transformAngle, double tx, double ty, double aspectRatio) {
+    LOG_INFO(1, "k=%9.9lf, t_a=%9.9lf, tx=%9.9lf, ty=%9.9lf, ", k, transformAngle, tx, ty);
+    /* From the Chartfox Discord forum :
+     * "Yeah we don't have any solid documentation on this yet but those parameters
+     * define a transform from a point on the chart (defined by a ratio) and coordinates.
+     *
+     * To get the chart position for a geo coordinate pair (the inverse of this operation) you
+     * essentially convert your coordinates to EPSG:3857, do inverse translation (with tx and ty),
+     * inverse rotation (using rotation_angle) and inverse scaling. You can then
+     * scale by the y-height in pixels of your chart to convert into pixel xy coordinates"
+     *
+     * The 0,0 origin of a Chartfox chart is bottom left.
+     * Instead of top left for Avitab georeferenced charts.
+     * Top left seems to come out as 0,-1 !?
+     * The k scale value refers to the y-axis.
+     * The x-axis then also needs to take into account the aspect ratio of the PDF
+     */
+    lePixelsToWorld.initialiseFromChartfoxP2W(k, transformAngle, tx, ty, aspectRatio);
+    leWorldToPixels.initialiseFromChartfoxW2P(k, transformAngle, tx, ty, aspectRatio);
+    northOffsetAngle = transformAngle * 180 / M_PI;
+    isCalibrated = true;
+    if (dbg) {
+        logDebugInfo();
+    }
+}
+
 void Calibration::logDebugInfo() const {
     // Log reversed coefficients for equivalence check during development/debug/refactoring
     double ax, bx, cx,  ay, by, cy, axr, bxr, cxr, ayr, byr, cyr;
@@ -299,8 +349,38 @@ void Calibration::logDebugInfo() const {
     LOG_INFO(dbg, "leP2W reversed %+4.10f, %+4.10f, %+4.10f,  %+4.10f, %+4.10f, %+4.10f",
             axr, bxr, cxr,  ayr, byr, cyr);
 
-    // Recalculate reference points
     img::Point<double> p, w;
+
+    LOG_INFO(dbg, "Corners W2P:");
+
+    p = worldToPixels(      -2.184721296, 51.899911000);
+    LOG_INFO(dbg,    "0,0 : -2.184721296, 51.899911000 -> %9.9lf, %9.9lf", p.x, p.y);
+    p = worldToPixels(      -2.184646212, 51.886065983);
+    LOG_INFO(dbg,    "0,1 : -2.184646212, 51.886065983 -> %9.9lf, %9.9lf", p.x, p.y);
+    p = worldToPixels(      -2.150987738, 51.899963766);
+    LOG_INFO(dbg,    "1,0 : -2.150987738, 51.899963766 -> %9.9lf, %9.9lf", p.x, p.y);
+    p = worldToPixels(      -2.150912654, 51.886118765);
+    LOG_INFO(dbg,    "1,1 : -2.150912654, 51.886118765 -> %9.9lf, %9.9lf", p.x, p.y);
+
+    LOG_INFO(dbg, "Corners P2W -> W2P:");
+    w = pixelsToWorld(0, 0);
+    p = worldToPixels(w.x, w.y);
+    LOG_INFO(dbg, " 0, 0 -> %9.9lf, %9.9lf -> %9.9lf, %9.9lf", w.x, w.y, p.x, p.y);
+    w = pixelsToWorld(0, 1);
+    p = worldToPixels(w.x, w.y);
+    LOG_INFO(dbg, " 0, 1 -> %9.9lf, %9.9lf -> %9.9lf, %9.9lf", w.x, w.y, p.x, p.y);
+    w = pixelsToWorld(1, 0);
+    p = worldToPixels(w.x, w.y);
+    LOG_INFO(dbg, " 1, 0 -> %9.9lf, %9.9lf -> %9.9lf, %9.9lf", w.x, w.y, p.x, p.y);
+    w = pixelsToWorld(1, 1);
+    p = worldToPixels(w.x, w.y);
+    LOG_INFO(dbg, " 1, 1 -> %9.9lf, %9.9lf -> %9.9lf, %9.9lf", w.x, w.y, p.x, p.y);
+
+    if (isChartfoxGeoreferenced) {
+        return;
+    }
+
+    // Recalculate reference points
     w = pixelsToWorld(regX1, regY1);
     LOG_INFO(dbg, "reference 1 P2W  %4.6f, %4.6f - > %4.6f, %4.6f", regX1, regY1, regLon1, regLat1);
     LOG_INFO(dbg, "computed    P2W  %4.6f, %4.6f - > %4.6f, %4.6f", regX1, regY1, w.x, w.y);
@@ -476,29 +556,53 @@ double Calibration::invMercator(double lat) const {
     return std::atan(std::sinh(lat * M_PI / 180.0)) * 180.0 / M_PI;
 }
 
+std::pair<double, double> Calibration::latLonToEPSG3857(double lat, double lon) const {
+    LOG_INFO(0, "lat,lon = %9.9lf,%9.9lf", lat, lon);
+    double lon3857 = lon * 20037508.34 / 180;
+    double lat3857 = std::log(std::tan((90 + lat) * M_PI / 360)) / (M_PI / 180);
+    lat3857 = lat3857 * 20037508.34 / 180;
+    LOG_INFO(0, "lat, lon = %9.9lf, %9.9lf", lat3857, lon3857);
+    return std::pair<double, double>(lat3857, lon3857);
+}
+
+std::pair<double, double> Calibration::EPSG3857toLatLon(double lat3857, double lon3857) const {
+    LOG_INFO(0, "lat,lon = %9.9lf,%9.9lf", lat3857, lon3857);
+    double lon = lon3857 *  180 / 20037508.34 ;
+    double lat = std::atan(std::exp(lat3857 * M_PI / 20037508.34)) * 360 / M_PI - 90;
+    LOG_INFO(0, "lat,lon = %9.9lf,%9.9lf", lat, lon);
+    return std::pair<double, double>(lat, lon);
+}
+
 img::Point<double> Calibration::worldToPixels(double lon, double lat) const {
-    LOG_INFO(0, "lat,lon = %4.10f,%4.10f", lat, lon);
+    LOG_INFO(0, "lat,lon = %9.9lf, %9.9lf", lat, lon);
 
-    auto xy = mercator(lat, lon);
-    LOG_INFO(0, "x,y =     %4.10f,%4.10f", xy.first, xy.second);
+    std::pair<double, double> yx;
+    yx = isChartfoxGeoreferenced ? latLonToEPSG3857(lat, lon) : mercator(lat, lon);
+    LOG_INFO(0, "x,y =     %9.9lf, %9.9lf", yx.second, yx.first);
 
-    auto r = leWorldToPixels.getResult(xy.second, xy.first);
+    auto r = leWorldToPixels.getResult(yx.second, yx.first);
     double x = r.first;
     double y = r.second;
 
-    LOG_INFO(0, "x,y =     %4.10f,%4.10f", x, y);
+    LOG_INFO(0, "x,y =     %9.9lf,%9.9lf", x, y);
     return img::Point<double>{x, y};
 }
 
 img::Point<double> Calibration::pixelsToWorld(double x, double y) const {
-    LOG_INFO(0, "x,y =     %4.10f,%4.10f", x, y);
+    LOG_INFO(0, "x,y =     %9.9lf,%9.9lf", x, y);
 
     auto r = lePixelsToWorld.getResult(x, y);
     double lat = r.second;
     double lon = r.first;
-    LOG_INFO(0, "lat,lon = %4.10f,%4.10f", lat, lon);
+    LOG_INFO(0, "lat,lon = %9.9lf,%9.9lf", lat, lon);
 
-    lat = invMercator(lat);
+    if (isChartfoxGeoreferenced) {
+        auto r = EPSG3857toLatLon(lat, lon);
+        lat = r.first;
+        lon = r.second;
+    } else {
+        lat = invMercator(lat);
+    }
 
     LOG_INFO(0, "lat,lon = %4.10f,%4.10f", lat, lon);
     return img::Point<double>{lon, lat};

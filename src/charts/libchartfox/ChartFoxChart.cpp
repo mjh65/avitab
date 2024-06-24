@@ -101,9 +101,10 @@ void ChartFoxChart::changeNightMode(std::shared_ptr<img::TileSource> src, bool n
     docSource->setNightMode(nightMode);
 }
 
-void ChartFoxChart::setChartData(const std::vector<uint8_t> &blob, const std::string type) {
+void ChartFoxChart::setChartData(const std::vector<uint8_t> &blob, const std::string type, const std::string &georef) {
     chartData = blob;
     chartType = type;
+    calibrationMetadata = georef;
 }
 
 const std::vector<uint8_t> ChartFoxChart::getChartData() const {

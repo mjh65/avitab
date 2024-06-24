@@ -89,7 +89,8 @@ void LocalFileSource::findAndLoadCalibration() {
         logger::info("Loaded co-located json calibration file for %s", utf8FileName.c_str());
         std::string jsonStr((std::istreambuf_iterator<char>(jsonFile)),
                              std::istreambuf_iterator<char>());
-        calibration.fromJsonString(jsonStr);
+        LOG_INFO(1, "%s", jsonStr.c_str());
+        calibration.fromJsonString(jsonStr, rasterizer.getAspectRatio(0));
     } else {
         // Try a co-located name-matched Google Earth KML file for calibration
         std::string kmlFileName = utf8FileName + ".kml";
@@ -108,8 +109,7 @@ void LocalFileSource::findAndLoadCalibration() {
             }
             std::string calibrationMetadata = chartService->getCalibrationMetadataForFile(utf8FileName);
             if (calibrationMetadata != "") {
-                logger::info("Loaded hash-mapped json calibration file for %s", utf8FileName.c_str());
-                calibration.fromJsonString(calibrationMetadata);
+                calibration.fromJsonString(calibrationMetadata, rasterizer.getAspectRatio(0));
             } else {
                 logger::warn("No json or kml calibration file for %s", utf8FileName.c_str());
                 return;
