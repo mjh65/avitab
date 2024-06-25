@@ -112,12 +112,15 @@ std::shared_ptr<APICall<std::shared_ptr<Chart>>> ChartService::loadChart(std::sh
     auto call = std::make_shared<APICall<std::shared_ptr<Chart>>>([this, chart] {
         auto bgChart = std::dynamic_pointer_cast<chartfox::ChartFoxChart>(chart);
         if (bgChart) {
-            chartFox->loadChart(bgChart);
+            chartFox->loadChart(bgChart); // This loads Chartfox georef if present
             auto pdfData = bgChart->getPdfData();
             auto in = std::string((char *)pdfData.data(), pdfData.size());
             auto hash = crypto.sha256String(in);
-            std::string calibrationMetadata = getCalibrationMetadataForHash(hash);
-            bgChart->setCalibrationMetadata(calibrationMetadata);
+            std::string localCalibrationMetadata = getCalibrationMetadataForHash(hash);
+            if (localCalibrationMetadata != "") {
+                // Use local calibration metadata, overriding any Chartfox georef
+                bgChart->setCalibrationMetadata(localCalibrationMetadata);
+            }
         }
 
         auto nvChart = std::dynamic_pointer_cast<navigraph::NavigraphChart>(chart);

@@ -158,6 +158,7 @@ ChartFoxAPI::ChartsList ChartFoxAPI::getChartsFor(const std::string& icao) {
 
 void ChartFoxAPI::loadChart(std::shared_ptr<ChartFoxChart> chart) {
     auto chartUrl = chart->getURL();
+    std::string calib;
     if (chartUrl.empty()) {
         try {
             std::string url = std::string("https://api.chartfox.org/v2/charts/") + chart->getID();
@@ -165,15 +166,15 @@ void ChartFoxAPI::loadChart(std::shared_ptr<ChartFoxChart> chart) {
             nlohmann::json respJson = nlohmann::json::parse(response);
             chartUrl = encodeUrl(respJson.at("url"));
             chart->setURL(chartUrl);
-            std::string calib = nlohmann::to_string(respJson.at("georefs"));
-            logger::info("georefs=%s", calib.c_str());
+            calib = nlohmann::to_string(respJson.at("georefs"));
+            LOG_INFO(1, "georefs=%s", calib.c_str());
         } catch (const std::exception &e) {
             logger::warn("Unable to obtain URL for chart: %s, %s", chart->getICAO().c_str(), chart->getName().c_str());
             return;
         }
     }
     auto pdfData = oauth->getBinary(chartUrl);
-    chart->attachPDF(pdfData);
+    chart->attachPDF(pdfData, calib);
 }
 
 } /* namespace chartfox */

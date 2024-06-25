@@ -50,7 +50,7 @@ public:
     void setURL(const std::string url);
     std::string getURL() const;
 
-    void attachPDF(const std::vector<uint8_t> &data);
+    void attachPDF(const std::vector<uint8_t> &data, const std::string &georef);
     const std::vector<uint8_t> getPdfData() const;
 
 private:

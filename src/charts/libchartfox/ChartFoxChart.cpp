@@ -101,8 +101,9 @@ void ChartFoxChart::changeNightMode(std::shared_ptr<img::TileSource> src, bool n
     pdfSrc->setNightMode(nightMode);
 }
 
-void ChartFoxChart::attachPDF(const std::vector<uint8_t> &data) {
+void ChartFoxChart::attachPDF(const std::vector<uint8_t> &data, const std::string &georef) {
     pdfData = data;
+    calibrationMetadata = georef;
 }
 
 const std::vector<uint8_t> ChartFoxChart::getPdfData() const { return pdfData; }
