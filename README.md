@@ -1,0 +1,52 @@
+# AviTab - The Aviator's Tablet
+
+AviTab is a plugin for the [X-Plane](http://www.x-plane.com/) flight simulator (versions 11.20+ and 12). It displays a tablet like computer with a few apps in the cockpit and is mainly used for flying in virtual reality. But is also very handy in windowed mode, with integrations such as Zibo's B737-800X, it truly enhances the flight experience with a fully functioning EFB in the virtual cockpit.
+
+![](screenshots/launcher.jpg)
+
+## Purpose
+When flying in a simulator, one often needs to lookup details in PDF charts, plane manuals,
+checklists or other documents. Using a PDF reader breaks the immersion because the virtual aviator
+either has to take off of their HMD or use other tools that can move windows into VR.
+
+AviTab tries to solve this problem by offering a PDF reader inside a native plugin for X-Plane.
+Using a plugin also opens possibilites for more apps inside the tablet, for example to display information
+about the plane status or aid in navigation.
+
+## Features
+Let the screenshots speak! Note that these were taken using the standalone version for better resolution,
+but all of this is available right inside your VR cockpit.
+
+![](screenshots/charts.jpg)
+![](screenshots/map.jpg)
+![](screenshots/airports.jpg)
+
+More screenshots here: [Screenshots](screenshots/)
+
+## Installation
+
+* Download the latest release from the [release page](https://github.com/teamavitab/avitab/releases/latest)
+* Extract the archive and move the folder into your ``X-Plane/Resources/Plugins`` directory
+* Start X-Plane
+* Find a new menu inside the ``plugins`` directory to toggle the tablet
+* Optionally, you can assign a key for this command
+
+## Usage
+
+### General
+When hovering over the edges of the tablet from a short distance, X-Plane will display green bars around the tablet.
+The _upper_ bar can be used to grab the window and move it around inside the cockpit.
+
+### Charts Viewer
+The charts viewer displays PDF files inside the ``charts/`` subdirectory of the ``plugin/`` directoy. You can add your
+charts there, including subdirectories.
+
+## Limitations
+
+* PDFs containing [CJK fonts](https://en.wikipedia.org/wiki/List_of_CJK_fonts)
+  or ancient fonts such [Linear B](https://en.wikipedia.org/wiki/Linear_B) are not supported.
+  This is mainly due to font sizes - a version containing all fonts would be 40 Megabytes in size.
+
+## Compiling
+
+See [Compiling](https://github.com/teamavitab/avitab/wiki/Compiling) in the Wiki.
