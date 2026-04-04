@@ -2,7 +2,7 @@
 
 AviTab is a plugin for the [X-Plane](http://www.x-plane.com/) flight simulator (versions 11.20+ and 12). It displays a tablet like computer with a few apps in the cockpit and is mainly used for flying in virtual reality. But is also very handy in windowed mode, with integrations such as Zibo's B737-800X, it truly enhances the flight experience with a fully functioning EFB in the virtual cockpit.
 
-![](screenshots/launcher.jpg)
+![](docs/screenshots/launcher.jpg)
 
 ## Purpose
 When flying in a simulator, one often needs to lookup details in PDF charts, plane manuals,
@@ -17,11 +17,11 @@ about the plane status or aid in navigation.
 Let the screenshots speak! Note that these were taken using the standalone version for better resolution,
 but all of this is available right inside your VR cockpit.
 
-![](screenshots/charts.jpg)
-![](screenshots/map.jpg)
-![](screenshots/airports.jpg)
+![](docs/screenshots/charts.jpg)
+![](docs/screenshots/map.jpg)
+![](docs/screenshots/airports.jpg)
 
-More screenshots here: [Screenshots](screenshots/)
+More screenshots [here](docs/screenshots/)
 
 ## Installation
 
