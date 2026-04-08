@@ -50,13 +50,7 @@ private:
     static constexpr int TIMER_TICKS_PER_SEC = 1000 / TIMER_PERIOD_MS;
     Timer tickTimer;
     unsigned int timerCount = 0;
-    unsigned int localTimeSecs = 0;
-    enum clockMode {
-        STOPWATCH,
-        SYSTEMTIME,
-        SIMTIME
-    };
-    int curClockMode = SIMTIME;
+    bool stopwatchMode = false;
 
     bool showFps = true;
     std::array<float, 30> fpsRingBuffer{};
