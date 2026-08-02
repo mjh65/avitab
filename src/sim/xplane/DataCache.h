@@ -21,11 +21,11 @@
 #include <vector>
 #include <string>
 #include <XPLM/XPLMDataAccess.h>
-#include "EnvData.h"
+#include "SimData.h"
 
 namespace xdata {
 
-// This class may only be used by the environment thread
+// This class may only be used by the simDriver thread
 class DataCache {
 public:
     EnvData getData(const std::string &dataRef);

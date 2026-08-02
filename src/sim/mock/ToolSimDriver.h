@@ -17,16 +17,16 @@
  */
 #pragma once
 
-#include "Environment.h"
+#include "SimDriver.h"
 
 /**
  * This class implements methods common to desktop/tool variants of Avitab,
  * currently the XPlane stand-alone application (used for testing) and the MS
  * Flight Simulator in-game panel server for Avitab.
  */
-class ToolEnvironment : public avitab::Environment {
+class ToolSimDriver : public avitab::SimDriverBase {
 public:
-    ToolEnvironment();
+    ToolSimDriver();
 
     void createMenu(const std::string &name) override;
     void addMenuEntry(const std::string &label, std::function<void()> cb) override;

@@ -24,13 +24,13 @@
 #include <mutex>
 #include <memory>
 #include <vector>
-#include "GUIDriver.h"
-#include "DataRefImport.h"
-#include "DataRefExport.h"
+#include "UiDriver.h"
+#include "sim/xplane/DataRefImport.h"
+#include "sim/xplane/DataRefExport.h"
 
-class XPlaneGUIDriver: public avitab::GUIDriver {
+class XPlaneUiDriver: public avitab::UiDriverBase {
 public:
-    XPlaneGUIDriver();
+    XPlaneUiDriver();
 
     void init(int width, int height) override;
     void createWindow(const std::string &title, const avitab::WindowRect &rect) override;
@@ -54,7 +54,7 @@ public:
     void passLeftClick(bool down, bool drag) override;
     void passWheel(int direction) override;
 
-    ~XPlaneGUIDriver();
+    ~XPlaneUiDriver();
 private:
     avitab::WindowRect lastRect{};
     std::shared_ptr<float> brightness;

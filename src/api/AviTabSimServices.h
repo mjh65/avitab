@@ -17,26 +17,16 @@
  */
 #pragma once
 
-#include <memory>
-
 namespace avitab {
 
-// Abstract interface to the AviTab core used by the simulation and windows drivers
-// and the product wrappers.
+// Abstract interface defining the services provided by the simulation,
+// and used by the AviTab core and the product wrappers.
 
-class Environment;
-class GUIDriver;
-
-class AviTabCore {
+class AviTabSimServices {
 public:
-    static std::unique_ptr<AviTabCore> CreateAviTabCore(std::shared_ptr<Environment> env, std::shared_ptr<GUIDriver> gui);
 
-    virtual void startApp() = 0;
-    virtual void stopApp() = 0;
-    virtual void toggleTablet() = 0;
-    virtual void onPlaneLoad() = 0;
 
-    virtual ~AviTabCore() { }
+    virtual ~AviTabSimServices() { }
 };
 
 } // namespace avitab
