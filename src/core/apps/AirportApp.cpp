@@ -111,7 +111,7 @@ void AirportApp::onSearchEntered(const std::string& code) {
 
     std::vector<std::string> resultStrings;
     for (auto &ap: airports) {
-        resultStrings.push_back(ap->getDisplayID() + " - " + ap->getIdent());
+        resultStrings.push_back(ap->getDisplayID() + " - " + ap->getName());
     }
 
     resultList = std::make_shared<DropDownList>(searchPage, resultStrings);
@@ -244,7 +244,7 @@ std::string AirportApp::toAptHeader(std::shared_ptr<navdb::Airport> airport) {
     double distanceNm, bearing;
 
     std::tie(distanceNm, bearing) = getNavData(airport);
-    str << airport->getIdent() << " (" << airport->getDisplayID() << ", " << std::to_string(airport->getElevationFt()) << " ft) ";
+    str << airport->getName() << " (" << airport->getDisplayID() << ", " << std::to_string(airport->getElevationFt()) << " ft) ";
     str << std::fixed << std::setprecision(1) << distanceNm << " nm, " << bearing << "°T";
     return str.str();
 }
