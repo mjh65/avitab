@@ -24,13 +24,18 @@
 #include "gui/widgets/Checkbox.h"
 #include "gui/widgets/Slider.h"
 #include "gui/Timer.h"
-#include <array>
 
 namespace avitab {
 
 class HeaderApp: public App {
 public:
     HeaderApp(FuncsPtr appFuncs);
+
+private:
+    // settings callbacks at start and when changed
+    void onClockModeChange();
+    void onShowFPSChange();
+
 private:
     static constexpr int HOR_PADDING = 10, VERT_PADDING = 10;
     std::shared_ptr<Label> clockLabel, fpsLabel, navLabel;
@@ -43,8 +48,6 @@ private:
     std::shared_ptr<Button> pauseButton, nextButton, prevButton;
     std::shared_ptr<Label> brightLabel, mediaLabel;
     std::shared_ptr<Button> closeButton;
-
-    std::shared_ptr<avitab::Settings> savedSettings;
 
     static constexpr int TIMER_PERIOD_MS = 100;
     static constexpr int TIMER_TICKS_PER_SEC = 1000 / TIMER_PERIOD_MS;

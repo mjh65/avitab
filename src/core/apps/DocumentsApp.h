@@ -17,9 +17,6 @@
  */
 #pragma once
 
-#include <filesystem>
-#include <memory>
-#include <vector>
 #include "platform/Platform.h"
 #include "App.h"
 #include "gui/widgets/TabGroup.h"
@@ -104,7 +101,6 @@ private:
     void onPan(int x, int y, bool start, bool end);
     bool onTimer();
 
-    Settings::DocumentReadingConfig  settings;
     std::shared_ptr<Container> settingsContainer;
     std::shared_ptr<Label> settingsLabel;
     std::shared_ptr<Checkbox> mouseWheelScrollsCheckbox;

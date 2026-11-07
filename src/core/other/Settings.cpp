@@ -78,70 +78,6 @@ Settings::~Settings()
     }
 }
 
-template<>
-bool Settings::getGeneralSetting(const std::string &id) {
-    json::json_pointer jp("/general/" + id);
-    bool b = database->value(jp, false);
-    return b;
-}
-
-template<>
-int Settings::getGeneralSetting(const std::string &id) {
-    return getSetting("/general/" + id, 0);
-}
-
-template<>
-std::vector<std::string> Settings::getGeneralSetting(const std::string &id) {
-    std::vector<std::string> empty_list = {};
-    return getSetting("/general/" + id, empty_list);
-}
-
-template<>
-void Settings::setGeneralSetting(const std::string &id, const bool value) {
-    setSetting("/general/" + id, value);
-}
-
-template<>
-void Settings::setGeneralSetting(const std::string &id, const int value) {
-    setSetting("/general/" + id, value);
-}
-
-template<>
-void Settings::setGeneralSetting(const std::string &id, const std::string value) {
-    setSetting("/general/" + id, value);
-}
-
-template<>
-void Settings::setGeneralSetting(const std::string &id, std::vector<std::string> value) {
-    setSetting("/general/" + id, value);
-}
-
-template<>
-std::string Settings::getGeneralSetting(const std::string &id) {
-    return getSetting("/general/" + id, std::string(""));
-}
-
-std::shared_ptr<maps::OverlayConfig> Settings::getOverlayConfig() {
-    return overlayConfig;
-}
-
-std::shared_ptr<avitab::AirportConfig> Settings::getAirportConfig() {
-    return airportConfig;
-}
-
-std::shared_ptr<maps::MapConfig> Settings::getMapConfig() {
-    return mapConfig;
-}
-
-template<typename T>
-T Settings::getSetting(const std::string &ptr, T def) {
-    return database->value(json::json_pointer(ptr), def);
-}
-
-template<typename T>
-void Settings::setSetting(const std::string &id, const T value) {
-    (*database)[json::json_pointer(id)] = value;
-}
 
 void Settings::init() {
     // full init not required, just defaults that aren't zero/false/empty
@@ -164,12 +100,9 @@ void Settings::load() {
     for (const auto &i : filedata.items()) {
         (*database)[i.key()] = i.value();
     }
-
-    loadOverlayConfig();
-    loadAirportConfig();
-    loadMapConfig();
 }
 
+#if 0
 void Settings::loadOverlayConfig() {
     overlayConfig = std::make_shared<maps::OverlayConfig>();
     overlayConfig->drawMyAircraft = getSetting("/overlay/my_aircraft", true);
@@ -217,7 +150,9 @@ void Settings::loadMapConfig() {
 void Settings::saveMapConfig() {
     setSetting("/map/online_map", mapConfig->onlineMapIndex);
 }
+#endif
 
+#if 0
 void Settings::loadDocReadingConfig(const std::string appName, DocumentReadingConfig &config) {
     config.mouseWheelScrollsMultiPage = getSetting("/" + appName + "/docreading/mousewheelscroll", false);
 }
@@ -256,6 +191,7 @@ WindowRect Settings::loadWindowRect() {
     rect.poppedOut = getSetting("/window/popped", false);
     return rect;
 }
+#endif
 
 void Settings::upgrade1to2() {
     // version 1 preferences used the key 'pdfreading' which was changed to 'docreading' in version 2
@@ -285,15 +221,12 @@ void Settings::initMissing() {
         const std::vector<std::string> default_url_list = { 
             "https://teamavitab.github.io/avitab_georefs/georefs/TeamAvitabGeorefs.zip" 
         };
-        setGeneralSetting("remote_georefs_urls", default_url_list);
+        (*database)["general"]["remote_georefs_urls"] = default_url_list;
     }
 }
 
 void Settings::saveAll() {
     try {
-        saveOverlayConfig();
-        saveAirportConfig();
-        saveMapConfig();
         std::ofstream fout(filePath);
         fout << std::setw(4) << *database;
     } catch (const std::exception &e) {

@@ -83,7 +83,6 @@ private:
     std::shared_ptr<Button> nextButton;
     std::shared_ptr<Keyboard> keys;
     std::shared_ptr<Button> nearestButton;
-    std::shared_ptr<avitab::AirportConfig> airportConfig;
 
     void removeTab(std::shared_ptr<Page> page);
     void resetLayout();

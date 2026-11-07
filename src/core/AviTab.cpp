@@ -185,10 +185,10 @@ void AviTab::start(std::shared_ptr<Settings> prefs, std::shared_ptr<SimDriverBas
 
     navManager = std::make_unique<navdb::NavDbManager>(simDriver->getXpNavDataRootPath(), simDriver->getMsfsNavDataRootPath());
     img::TTFStamper::setFontDirectory(simDriver->getFontDirectory());
-    std::vector<std::string> remote_georefs_urls = settings->getGeneralSetting<std::vector<std::string>>("remote_georefs_urls");
+    auto remote_georefs_urls = settings->get("/general/remote_georefs_urls").get<std::vector<std::string>>();
     chartService = std::make_shared<apis::ChartService>(simDriver->getDataRootPath(), remote_georefs_urls);
 
-    std::string userfixes_file = settings->getGeneralSetting<std::string>("userfixes_file");
+    auto userfixes_file = settings->get("/general/userfixes_file").get<std::string>();
     navManager->loadUserFixes(userfixes_file);
 
     lvglUI = std::make_shared<LVGLToolkit>(uiDriver);

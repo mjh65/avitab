@@ -18,12 +18,10 @@
 #pragma once
 
 #include <nlohmann/json_fwd.hpp>
-#include <list>
-#include <memory>
+#include <nlohmann/json.hpp>
 #include <filesystem>
-#include "UiDriver.h"
-#include "AirportConfig.h"
-#include "OverlayConfig.h"
+#include <functional>
+#include <list>
 
 namespace avitab {
 
@@ -32,23 +30,14 @@ public:
     Settings(const std::filesystem::path &settingsFile);
     ~Settings();
 
-    template<typename T>
-    T getGeneralSetting(const std::string &id);
-    template<typename T>
-    void setGeneralSetting(const std::string &id, const T value);
+    const nlohmann::json& get(const std::string key);
+    void put(const std::string key, nlohmann::json& value);
+    template<class T>
+    void put(const std::string key, T value);
 
-    std::shared_ptr<maps::OverlayConfig> getOverlayConfig();
-    std::shared_ptr<avitab::AirportConfig> getAirportConfig();
-    std::shared_ptr<maps::MapConfig> getMapConfig();
-
-    struct DocumentReadingConfig {
-        bool mouseWheelScrollsMultiPage = false;
-    };
-    void loadDocReadingConfig(const std::string appName, DocumentReadingConfig &config);
-    void saveDocReadingConfig(const std::string appName, DocumentReadingConfig &config);
-
-    void saveWindowRect(const WindowRect &rect);
-    WindowRect loadWindowRect();
+    using ListenerFunc = std::function<void()>;
+    int registerChangeListener(const std::string key, ListenerFunc fn);
+    void unregisterChangeListener(int id);
 
     void saveAll();
 
@@ -63,23 +52,6 @@ private:
 private:
     const std::filesystem::path filePath;
     std::shared_ptr<nlohmann::json> database;
-    std::shared_ptr<maps::OverlayConfig> overlayConfig;
-    std::shared_ptr<avitab::AirportConfig> airportConfig;
-    std::shared_ptr<maps::MapConfig> mapConfig;
-
-    void loadOverlayConfig();
-    void saveOverlayConfig();
-
-    void loadAirportConfig();
-    void saveAirportConfig();
-    void loadMapConfig();
-    void saveMapConfig();
-
-    template<typename T>
-    T getSetting(const std::string &ptr, T def);
-
-    template<typename T>
-    void setSetting(const std::string &id, const T value);
 
     std::list<std::pair<const char *, uint32_t> > colorTable;
     uint32_t colorStringToInt(std::string colString, const char* colDefault);

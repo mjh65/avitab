@@ -27,12 +27,8 @@ namespace avitab {
 
 HeaderApp::HeaderApp(FuncsPtr appFuncs):
     App(appFuncs),
-    savedSettings(appFuncs->getSettings()),
     tickTimer(std::bind(&HeaderApp::onTick, this), TIMER_PERIOD_MS)
 {
-    curClockMode = savedSettings->getGeneralSetting<int>("clock_mode") % NUM_CLOCK_MODES;
-    showFps = savedSettings->getGeneralSetting<bool>("show_fps");
-
     auto container = getUIContainer();
     container->setPosition(0, 0);
     container->setDimensions(container->getWidth(), 30);
@@ -59,7 +55,21 @@ HeaderApp::HeaderApp(FuncsPtr appFuncs):
 
     createSettingsContainer();
 
+    auto settings = api().getSettings();
+    (void)settings->registerChangeListener("/general/clock_mode", [this] () { onClockModeChange(); });
+    (void)settings->registerChangeListener("/general/show_fps", [this] () { onShowFPSChange(); });
+
     onTick();
+}
+
+void HeaderApp::onClockModeChange() {
+    auto cmjson = api().getSettings()->get("/general/clock_mode");
+    curClockMode = cmjson.get<int>() % NUM_CLOCK_MODES;
+}
+
+void HeaderApp::onShowFPSChange() {
+    showFps = api().getSettings()->get("/general/show_fps");
+    fpsLabel->setVisible(showFps);
 }
 
 void HeaderApp::onScreenResize(int width, int height) {
@@ -83,7 +93,7 @@ void HeaderApp::createSettingsContainer() {
 
     fpsCheckbox = std::make_shared<Checkbox>(prefContainer, "Show FPS");
     fpsCheckbox->setChecked(showFps);
-    fpsCheckbox->setCallback([this] (bool checked) { showFps = checked; savedSettings->setGeneralSetting<bool>("show_fps", showFps); fpsLabel->setVisible(showFps); });
+    fpsCheckbox->setCallback([this] (bool checked) { api().getSettings()->put("/general/show_fps", checked); });
     fpsCheckbox->alignRightOf(brightnessSlider);
 
     mediaLabel = std::make_shared<Label>(prefContainer, "Ext. Media");
@@ -125,7 +135,7 @@ void HeaderApp::onClockClick(int x, int y, bool press, bool release) {
             elapsedTimerStartS = api().getZuluTimeSeconds();
         } else {
             curClockMode = (curClockMode + 1) % NUM_CLOCK_MODES;
-            savedSettings->setGeneralSetting<int>("clock_mode", curClockMode);
+            api().getSettings()->put("/general/clock_mode", curClockMode);
         }
         clickActive = false;
         clockUpdateAlarm = 0;
