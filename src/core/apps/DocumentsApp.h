@@ -36,6 +36,11 @@
 
 namespace avitab {
 
+struct DocReadingConfig {
+    nlohmann::json json; // expected to be a json object, ie key-value pairs
+    bool mouseWheelScrollsMultiPage;
+};
+
 class DocumentsApp: public App {
 public:
     DocumentsApp(FuncsPtr appFuncs, const std::string &title, const std::string &group, const std::filesystem::path &start, const std::string &fileRegex);
@@ -44,6 +49,11 @@ public:
 protected:
     void Run();
     void ChangeBrowseDirectory(const std::filesystem::path &dir);
+private:
+    void onReadingConfigChange();
+    void onShowOverlaysChange();
+    void onOverlayConfigChange();
+    DocReadingConfig readingCfg;
 private:
     const std::string appTitle;
     const std::string configGroup;

@@ -29,9 +29,15 @@ DocumentsApp::DocumentsApp(FuncsPtr appFuncs, const std::string &title, const st
     std::filesystem::create_directories(dir);
     fsBrowser = std::make_unique<FilesystemBrowser>(dir);
     setFilterRegex(fileRegex);
+
+    auto settings = api().getSettings();
+    (void)settings->registerChangeListener("/" + group + "/docreading", [this] () { onReadingSettingsChange(); });
+    (void)settings->registerChangeListener("/general/show_overlays_in_charts_app", [this] () { onShowOverlaysChange(); });
+    (void)settings->registerChangeListener("/overlay", [this] () { onOverlaySettingsChange(); });
 }
 
 void DocumentsApp::Run() {
+
     api().getSettings()->loadDocReadingConfig(configGroup, settings);
     if (api().getSettings()->getGeneralSetting<bool>("show_overlays_in_charts_app")) {
         overlays = api().getSettings()->getOverlayConfig();
@@ -46,6 +52,12 @@ void DocumentsApp::ChangeBrowseDirectory(const std::filesystem::path &dir) {
     fsBrowser->goTo(dir);
     showDirectory();
 }
+
+void DocumentsApp::onReadingSettingsChange() {}
+
+void DocumentsApp::onShowOverlaysChange() {}
+
+void DocumentsApp::onOverlaySettingsChange() {}
 
 void DocumentsApp::resetLayout() {
     tabs = std::make_shared<TabGroup>(getUIContainer());
